@@ -1,32 +1,39 @@
 """
 mqtt_client/services.py
 
-Public functions:
-  - start_mqtt_client()        → Entry point for management command
-  - process_received_message() → Handle incoming MQTT payload
-  - retry_pending_messages()   → Process retry queue on reconnect
+MQTT client for The Things Network uplink messages.
+Connects to TTN broker, receives device data, passes through ingestion,
+saves to weather database, and manages retry queue for failures.
 
-Private functions (prefix _):
-  - _connect_to_broker()       → Establish TLS connection to TTN
-  - _subscribe_to_topic()      → Subscribe to device uplink topic
-  - _handle_message()          → MQTT on_message callback
-  - _calculate_backoff()       → Exponential backoff delay
-  - _attempt_process()         → Try ingestion.process_payload()
-  - _store_failure()           → Queue message for retry
-  - _handle_connection_loss()  → Reconnect logic
+No public functions exposed to other apps (except start_mqtt_client for management command).
+All other functions are internal to this worker process.
+
+Data flow:
+    MQTT message
+    ↓
+    _on_message() callback
+    ↓
+    _process_message(raw_payload, received_at)
+    ↓
+    ingestion.process_payload() → cleaned dict
+    ↓
+    weather.save_reading() → save to database
+    ↓
+    On ParseError/other error → _store_failure() → retry queue
 """
 
 import json
 import logging
 import ssl
 import time
-from datetime import datetime, timedelta
+from datetime import datetime
 
 import paho.mqtt.client as mqtt
 from django.conf import settings
 from django.utils import timezone
 
 from apps.ingestion.services import process_payload
+from apps.weather.services import save_reading
 
 from .models import RetryQueue
 
@@ -34,7 +41,7 @@ logger = logging.getLogger(__name__)
 
 
 # ============================================================================
-# PUBLIC FUNCTIONS - Called by management command or other apps
+# ENTRY POINT
 # ============================================================================
 
 def start_mqtt_client():
@@ -99,53 +106,90 @@ def start_mqtt_client():
         raise
 
 
-def process_received_message(raw_payload: str, received_at: datetime):
+# ============================================================================
+# MQTT CALLBACKS
+# ============================================================================
+
+def _on_connect(client, userdata, flags, rc):
+    """MQTT on_connect callback."""
+    if rc == 0:
+        logger.info("MQTT broker connected successfully")
+        
+        # Subscribe to device topic
+        _subscribe_to_topic(client)
+        
+        # Process any pending retry queue messages
+        _retry_pending_messages()
+    else:
+        logger.error(f"MQTT connection failed with code {rc}")
+
+
+def _on_disconnect(client, userdata, rc):
+    """MQTT on_disconnect callback."""
+    if rc == 0:
+        logger.info("MQTT disconnect (clean)")
+    else:
+        logger.warning(f"MQTT unexpected disconnect with code {rc}. Reconnecting...")
+
+
+def _on_message(client, userdata, msg):
+    """MQTT on_message callback - invoked for each received message."""
+    try:
+        raw_payload = msg.payload.decode('utf-8')
+        received_at = timezone.now()
+        
+        logger.debug(f"Received MQTT message on topic {msg.topic}")
+        
+        # Process the message
+        _process_message(raw_payload, received_at)
+    
+    except Exception as e:
+        logger.error(f"Error in MQTT message handler: {e}")
+
+
+# ============================================================================
+# MESSAGE PROCESSING - CORE DATA FLOW
+# ============================================================================
+
+def _process_message(raw_payload: str, received_at: datetime):
     """
     Process a single message received from MQTT broker.
     
-    Flow:
-    1. Call ingestion.process_payload(raw_payload, received_at)
-    2. On success → return cleaned data
-    3. On error → store in RetryQueue for later retry
+    Complete flow:
+    1. Call ingestion.process_payload() → cleaned dict
+    2. Call weather.save_reading() → save to database
+    3. On error → store in RetryQueue for retry
     
     Args:
         raw_payload: Raw JSON string from TTN
         received_at: UTC datetime of receipt
-    
-    Returns:
-        dict: {"success": bool, "error": str or None, "reading": obj or None}
     """
     logger.debug(f"Processing message received at {received_at}")
     
     try:
-        # Parse the raw payload
+        # Step 1: Parse raw TTN payload via ingestion contract
         cleaned_data = process_payload(raw_payload, received_at)
+        logger.debug(f"Parsed message from device {cleaned_data.get('device_id')}")
         
-        # Forward to weather app (will be called via weather service)
-        # This is where the data actually enters the system
-        logger.info(f"Successfully parsed message from device {cleaned_data.get('device_id')}")
+        # Step 2: Save to weather database via weather contract
+        reading = save_reading(cleaned_data)
+        logger.info(f"Saved reading from {cleaned_data.get('device_id')} at {received_at}")
         
-        return {
-            "success": True,
-            "error": None,
-            "reading": cleaned_data
-        }
+        # Data is now in the system - realtime will pick up via signal
     
     except Exception as e:
         error_msg = str(e)
-        logger.warning(f"Error processing message: {error_msg}")
+        logger.warning(f"Failed to process message: {error_msg}")
         
         # Store for retry
         _store_failure(raw_payload, received_at, error_msg)
-        
-        return {
-            "success": False,
-            "error": error_msg,
-            "reading": None
-        }
 
 
-def retry_pending_messages():
+# ============================================================================
+# RETRY QUEUE MANAGEMENT
+# ============================================================================
+
+def _retry_pending_messages():
     """
     Process all pending messages in the retry queue.
     
@@ -169,22 +213,22 @@ def retry_pending_messages():
     for entry in pending:
         try:
             # Attempt to process
-            result = _attempt_process(entry)
+            result = _attempt_retry(entry)
             
             if result["success"]:
                 entry.mark_success()
                 stats["successful"] += 1
-                logger.info(f"Retry queue {entry.pk}: success on attempt {entry.attempts}")
+                logger.info(f"Retry {entry.pk}: success on attempt {entry.attempts}")
             else:
                 entry.record_attempt(result["error"])
                 stats["failed"] += 1
                 logger.warning(
-                    f"Retry queue {entry.pk}: failed attempt {entry.attempts}, "
+                    f"Retry {entry.pk}: failed attempt {entry.attempts}, "
                     f"error: {result['error']}"
                 )
         
         except Exception as e:
-            logger.error(f"Unexpected error processing retry queue {entry.pk}: {e}")
+            logger.error(f"Unexpected error retrying {entry.pk}: {e}")
             entry.record_attempt(f"Unexpected error: {str(e)}")
             stats["failed"] += 1
         
@@ -198,46 +242,61 @@ def retry_pending_messages():
     return stats
 
 
-# ============================================================================
-# PRIVATE FUNCTIONS - Internal use only
-# ============================================================================
-
-def _on_connect(client, userdata, flags, rc):
-    """MQTT on_connect callback."""
-    if rc == 0:
-        logger.info("MQTT broker connected successfully")
-        
-        # Subscribe to device topic
-        _subscribe_to_topic(client)
-        
-        # Process any pending retry queue messages
-        retry_pending_messages()
-    else:
-        logger.error(f"MQTT connection failed with code {rc}")
-
-
-def _on_disconnect(client, userdata, rc):
-    """MQTT on_disconnect callback."""
-    if rc == 0:
-        logger.info("MQTT disconnect (clean)")
-    else:
-        logger.warning(f"MQTT unexpected disconnect with code {rc}. Reconnecting...")
-
-
-def _on_message(client, userdata, msg):
-    """MQTT on_message callback - invoked for each received message."""
+def _attempt_retry(entry: RetryQueue) -> dict:
+    """
+    Attempt to process a retry queue entry.
+    
+    Same flow as _process_message: ingestion → weather.save_reading()
+    
+    Args:
+        entry: RetryQueue instance
+    
+    Returns:
+        dict: {"success": bool, "error": str or None}
+    """
     try:
-        raw_payload = msg.payload.decode('utf-8')
-        received_at = timezone.now()
+        raw_payload = entry.raw_payload
+        received_at = entry.received_at
         
-        logger.debug(f"Received MQTT message on topic {msg.topic}")
+        # Parse via ingestion
+        cleaned_data = process_payload(raw_payload, received_at)
         
-        # Process the message
-        process_received_message(raw_payload, received_at)
+        # Save via weather
+        reading = save_reading(cleaned_data)
+        
+        logger.debug(f"Retry {entry.pk}: success")
+        return {"success": True, "error": None}
     
     except Exception as e:
-        logger.error(f"Error in MQTT message handler: {e}")
+        return {"success": False, "error": str(e)}
 
+
+def _store_failure(raw_payload: str, received_at: datetime, error_message: str):
+    """
+    Store a failed message in the retry queue.
+    
+    Args:
+        raw_payload: Original TTN JSON string
+        received_at: UTC datetime of receipt
+        error_message: Error message from processing attempt
+    """
+    try:
+        entry = RetryQueue.objects.create(
+            raw_payload=raw_payload,
+            received_at=received_at,
+            status='pending',
+            attempts=0,
+            error_message=error_message
+        )
+        logger.info(f"Stored in retry queue: {entry.pk}")
+    
+    except Exception as e:
+        logger.error(f"Failed to store in retry queue: {e}")
+
+
+# ============================================================================
+# MQTT CONNECTION HELPERS
+# ============================================================================
 
 def _subscribe_to_topic(client):
     """Subscribe to TTN device uplink topic."""
@@ -253,66 +312,3 @@ def _subscribe_to_topic(client):
     except Exception as e:
         logger.error(f"Failed to subscribe to topic: {e}")
         raise
-
-
-def _calculate_backoff(attempt: int) -> int:
-    """
-    Calculate exponential backoff delay.
-    
-    Sequence: 1s → 2s → 4s → 8s → 16s → 32s → max 60s
-    
-    Args:
-        attempt: Attempt number (0-indexed)
-    
-    Returns:
-        Delay in seconds
-    """
-    delay = min(2 ** attempt, 60)
-    return int(delay)
-
-
-def _attempt_process(retry_queue_entry: RetryQueue) -> dict:
-    """
-    Attempt to process a retry queue entry.
-    
-    Args:
-        retry_queue_entry: RetryQueue instance
-    
-    Returns:
-        dict: {"success": bool, "error": str or None}
-    """
-    try:
-        raw_payload = retry_queue_entry.raw_payload
-        received_at = retry_queue_entry.received_at
-        
-        # Try to parse via ingestion
-        cleaned_data = process_payload(raw_payload, received_at)
-        
-        logger.debug(f"Retry queue {retry_queue_entry.pk}: parsed successfully")
-        return {"success": True, "error": None}
-    
-    except Exception as e:
-        return {"success": False, "error": str(e)}
-
-
-def _store_failure(raw_payload: str, received_at: datetime, error_message: str):
-    """
-    Store a failed message in the retry queue.
-    
-    Args:
-        raw_payload: Original TTN JSON string
-        received_at: UTC datetime of receipt
-        error_message: Error message from parsing attempt
-    """
-    try:
-        entry = RetryQueue.objects.create(
-            raw_payload=raw_payload,
-            received_at=received_at,
-            status='pending',
-            attempts=0,
-            error_message=error_message
-        )
-        logger.info(f"Stored message in retry queue: {entry.pk}")
-    
-    except Exception as e:
-        logger.error(f"Failed to store message in retry queue: {e}")
