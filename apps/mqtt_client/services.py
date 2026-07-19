@@ -55,7 +55,7 @@ def start_mqtt_client():
         RuntimeError: If required environment variables are missing
         ConnectionError: If broker cannot be reached after retries
     """
-    logger.info("Starting MQTT client...")
+    logger.info("🚀 Starting MQTT client...")
     
     # Validate environment variables
     try:
@@ -66,6 +66,8 @@ def start_mqtt_client():
         port = settings.TTN_PORT or 8883
     except AttributeError as e:
         raise RuntimeError(f"Missing required TTN environment variable: {e}")
+    
+    logger.info(f"📋 Configuration: app_id={app_id}, device_id={device_id}, broker={broker}:{port}")
     
     # Create MQTT client
     client_id = f"weather-dashboard-{int(time.time())}"
@@ -96,13 +98,14 @@ def start_mqtt_client():
     
     # Connect and loop
     try:
-        logger.info(f"Connecting to {broker}:{port} as {app_id}...")
+        logger.info(f"🔗 Connecting to {broker}:{port}...")
         client.connect(broker, port, keepalive=60)
         
         # Blocking loop - reconnects automatically
+        logger.info("⏳ Listening for messages... (press Ctrl+C to stop)")
         client.loop_forever()
     except Exception as e:
-        logger.error(f"MQTT client error: {e}")
+        logger.error(f"❌ MQTT client error: {e}")
         raise
 
 
@@ -113,15 +116,20 @@ def start_mqtt_client():
 def _on_connect(client, userdata, flags, rc):
     """MQTT on_connect callback."""
     if rc == 0:
-        logger.info("MQTT broker connected successfully")
+        logger.info("✅ Successfully connected to TTN MQTT broker")
         
         # Subscribe to device topic
         _subscribe_to_topic(client)
         
         # Process any pending retry queue messages
-        _retry_pending_messages()
+        stats = _retry_pending_messages()
+        if stats['processed'] > 0:
+            logger.info(
+                f"📋 Processed {stats['processed']} messages from retry queue: "
+                f"{stats['successful']} successful, {stats['failed']} failed"
+            )
     else:
-        logger.error(f"MQTT connection failed with code {rc}")
+        logger.error(f"❌ MQTT connection failed with code {rc}")
 
 
 def _on_disconnect(client, userdata, rc):
@@ -144,7 +152,7 @@ def _on_message(client, userdata, msg):
         _process_message(raw_payload, received_at)
     
     except Exception as e:
-        logger.error(f"Error in MQTT message handler: {e}")
+        logger.error(f"❌ Error in MQTT message handler: {e}")
 
 
 # ============================================================================
@@ -164,22 +172,26 @@ def _process_message(raw_payload: str, received_at: datetime):
         raw_payload: Raw JSON string from TTN
         received_at: UTC datetime of receipt
     """
-    logger.debug(f"Processing message received at {received_at}")
-    
     try:
         # Step 1: Parse raw TTN payload via ingestion contract
         cleaned_data = process_payload(raw_payload, received_at)
-        logger.debug(f"Parsed message from device {cleaned_data.get('device_id')}")
+        device_id = cleaned_data.get('device_id', 'unknown')
+        temperature = cleaned_data.get('temperature', 'N/A')
+        
+        logger.debug(f"Parsed message from device {device_id}")
         
         # Step 2: Save to weather database via weather contract
         reading = save_reading(cleaned_data)
-        logger.info(f"Saved reading from {cleaned_data.get('device_id')} at {received_at}")
+        logger.info(
+            f"📡 Sensor data received: device={device_id} | "
+            f"temp={temperature}°C | saved to database ✅"
+        )
         
         # Data is now in the system - realtime will pick up via signal
     
     except Exception as e:
         error_msg = str(e)
-        logger.warning(f"Failed to process message: {error_msg}")
+        logger.warning(f"⚠️  Failed to process message: {error_msg}")
         
         # Store for retry
         _store_failure(raw_payload, received_at, error_msg)
@@ -288,10 +300,10 @@ def _store_failure(raw_payload: str, received_at: datetime, error_message: str):
             attempts=0,
             error_message=error_message
         )
-        logger.info(f"Stored in retry queue: {entry.pk}")
+        logger.warning(f"📋 Message queued for retry: {entry.pk} | Error: {error_message}")
     
     except Exception as e:
-        logger.error(f"Failed to store in retry queue: {e}")
+        logger.error(f"❌ Failed to store message in retry queue: {e}")
 
 
 # ============================================================================
@@ -307,8 +319,8 @@ def _subscribe_to_topic(client):
         topic = f"v3/{app_id}@ttn/devices/{device_id}/up"
         client.subscribe(topic, qos=1)
         
-        logger.info(f"Subscribed to topic: {topic}")
+        logger.info(f"🔔 Subscribed to topic: {topic}")
     
     except Exception as e:
-        logger.error(f"Failed to subscribe to topic: {e}")
+        logger.error(f"❌ Failed to subscribe to topic: {e}")
         raise
