@@ -136,3 +136,27 @@ TTN_API_KEY = os.environ.get("TTN_API_KEY")
 TTN_DEVICE_ID = os.environ.get("TTN_DEVICE_ID")
 TTN_BROKER = os.environ.get("TTN_BROKER", "eu1.cloud.thethings.network")
 TTN_PORT = int(os.environ.get("TTN_PORT", "8883"))
+
+LOGGING = {
+    'version': 1,
+    'disable_existing_loggers': False,
+    'formatters': {
+        'verbose': {
+            'format': '[{levelname}] {name} | {message}',
+            'style': '{',
+        },
+    },
+    'handlers': {
+        'console': {
+            'class': 'logging.StreamHandler',
+            'formatter': 'verbose',
+        },
+    },
+    'loggers': {
+        'apps.mqtt_client': {
+            'handlers': ['console'],
+            'level': 'INFO',
+            'propagate': False,
+        },
+    },
+}
