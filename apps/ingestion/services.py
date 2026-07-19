@@ -25,10 +25,20 @@ _MEASUREMENT_ID_MAP = {
     4104: "wind_direction",    # Wind Direction Sensor
     4105: "wind_speed",        # Wind Speed
     4113: "rainfall",          # Rain Gauge
-    3000: "battery",           # Battery Level
+    3000: "battery",           # Battery Level (optional)
 }
 
-_REQUIRED_MEASUREMENT_FIELDS = frozenset(_MEASUREMENT_ID_MAP.values())
+_REQUIRED_MEASUREMENT_FIELDS = frozenset([
+    "temperature",
+    "humidity",
+    "pressure",
+    "wind_direction",
+    "wind_speed",
+    "rainfall",
+    "light_intensity",
+])
+
+_OPTIONAL_MEASUREMENT_FIELDS = frozenset(["battery"])
 
 # Physically-plausible value ranges
 _VALIDATION_RANGES = {

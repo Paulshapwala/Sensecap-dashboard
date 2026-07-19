@@ -24,7 +24,7 @@ class WeatherReading(models.Model):
     wind_direction = models.FloatField(help_text="degrees, 0-360")
     rainfall = models.FloatField(help_text="mm")
     light_intensity = models.FloatField(help_text="lux")
-    battery = models.FloatField(help_text="%")
+    battery = models.FloatField(help_text="%", null=True, blank=True)
     rssi = models.IntegerField(help_text="dBm")
     snr = models.FloatField(help_text="dB")
 

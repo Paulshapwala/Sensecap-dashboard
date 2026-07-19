@@ -28,7 +28,7 @@ from .signals import reading_saved
 
 REQUIRED_FIELDS = [
     "temperature", "humidity", "pressure", "wind_speed", "wind_direction",
-    "rainfall", "light_intensity", "battery", "rssi", "snr",
+    "rainfall", "light_intensity", "rssi", "snr",
     "received_at", "device_id",
 ]
 
@@ -57,7 +57,9 @@ def _validate_reading_data(data: dict) -> None:
         raise ValidationError(f"Missing required field(s): {', '.join(missing)}")
 
     for field, (lo, hi) in FIELD_RANGES.items():
-        value = data[field]
+        value = data.get(field)
+        if value is None:
+            continue  # optional field not provided — skip range check
         if not (lo <= value <= hi):
             raise ValidationError(f"{field}={value} is out of range [{lo}, {hi}]")
 
@@ -65,12 +67,6 @@ def _validate_reading_data(data: dict) -> None:
 # ── Public contract (spec 4.1 "Exposes") ─────────────────────────────
 
 def save_reading(data: dict) -> WeatherReading:
-    """
-    Accepts a dict with the fields in REQUIRED_FIELDS (raw_payload optional).
-    Returns the saved WeatherReading instance.
-    Raises ValidationError if required fields are missing or out of range.
-    Fires reading_saved on success.
-    """
     _validate_reading_data(data)
 
     reading = WeatherReading.objects.create(
@@ -83,7 +79,7 @@ def save_reading(data: dict) -> WeatherReading:
         wind_direction=data["wind_direction"],
         rainfall=data["rainfall"],
         light_intensity=data["light_intensity"],
-        battery=data["battery"],
+        battery=data.get("battery"),
         rssi=data["rssi"],
         snr=data["snr"],
         raw_payload=data.get("raw_payload"),
