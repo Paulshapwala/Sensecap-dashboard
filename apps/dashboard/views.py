@@ -1,3 +1,134 @@
+# apps/dashboard/views.py
 from django.shortcuts import render
+from django.shortcuts import render, redirect
+from django.contrib.auth.decorators import login_required
+from django.contrib.auth import authenticate, login, logout
+from django.http import JsonResponse
+from django.views.decorators.http import require_http_methods
+from django.views.decorators.csrf import csrf_exempt
+from datetime import datetime
+from apps.weather.services import (
+    get_latest_reading,
+    get_readings,
+    get_aggregates,
+    get_device_status,
+)
 
-# Create your views here.
+# PAGE VIEWS (render templates)
+
+@login_required
+def live(request):
+    """GET / — Live dashboard page"""
+    return render(request, 'dashboard/live.html')
+
+
+@login_required
+def history(request):
+    """GET /history/ — Historical data page"""
+    return render(request, 'dashboard/history.html')
+
+
+def login_view(request):
+    """GET /login/ or POST /login/ — Login page"""
+    if request.method == 'POST':
+        username = request.POST.get('username')
+        password = request.POST.get('password')
+        user = authenticate(request, username=username, password=password)
+        
+        if user is not None:
+            login(request, user)
+            return redirect('dashboard:live')  # Redirect to live page
+        else:
+            return render(request, 'dashboard/login.html', {'error': 'Invalid credentials'})
+    
+    return render(request, 'dashboard/login.html')
+
+
+@login_required
+def logout_view(request):
+    """GET /logout/ — Logout and redirect to login"""
+    logout(request)
+    return redirect('dashboard:login')
+
+# DATA ENDPOINTS (return JSON)
+
+
+@login_required
+@require_http_methods(["GET"])
+def data_history(request):
+    """
+    GET /data/history/?start=2024-01-15&end=2024-01-22
+    Returns list of readings for a date range
+    """
+    start_str = request.GET.get('start')
+    end_str = request.GET.get('end')
+    
+    if not start_str or not end_str:
+        return JsonResponse({'error': 'start and end required'}, status=400)
+    
+    try:
+        start = datetime.fromisoformat(start_str)
+        end = datetime.fromisoformat(end_str)
+    except ValueError:
+        return JsonResponse({'error': 'Invalid date format'}, status=400)
+    
+    # Get readings from weather app
+    readings = get_readings(start, end)
+    
+    # Serialize to JSON
+    data = [
+        {
+            'time': r.received_at.isoformat(),
+            'device_id': r.device_id,
+            'temperature': r.temperature,
+            'humidity': r.humidity,
+            'pressure': r.pressure,
+            'wind_speed': r.wind_speed,
+            'wind_direction': r.wind_direction,
+            'rainfall': r.rainfall,
+            'light_intensity': r.light_intensity,
+            'rssi': r.rssi,
+            'snr': r.snr,
+        }
+        for r in readings
+    ]
+    
+    return JsonResponse({'readings': data})
+
+
+@login_required
+@require_http_methods(["GET"])
+def data_aggregates(request):
+    """
+    GET /data/aggregates/?start=2024-01-15&end=2024-01-22&period=hourly|daily
+    Returns aggregated data (min, max, avg) for a period
+    """
+    start_str = request.GET.get('start')
+    end_str = request.GET.get('end')
+    period = request.GET.get('period', 'hourly')  # hourly or daily
+    
+    if not start_str or not end_str:
+        return JsonResponse({'error': 'start and end required'}, status=400)
+    
+    try:
+        start = datetime.fromisoformat(start_str)
+        end = datetime.fromisoformat(end_str)
+    except ValueError:
+        return JsonResponse({'error': 'Invalid date format'}, status=400)
+    
+    # Get aggregates from weather app
+    aggregates = get_aggregates(start, end, period)
+    
+    # aggregates is already a dict/list, just return it
+    return JsonResponse({'aggregates': aggregates})
+
+
+@login_required
+@require_http_methods(["GET"])
+def data_device(request):
+    """
+    GET /data/device/
+    Returns current device status (battery, signal strength, etc.)
+    """
+    status = get_device_status()
+    return JsonResponse(status)
