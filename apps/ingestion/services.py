@@ -1,6 +1,5 @@
 """
 ingestion.services
-==================
 
 Core payload parsing service. Transforms raw TTN MQTT JSON from a SenseCAP S2120
 weather station into the clean dict shape required by weather.save_reading().
