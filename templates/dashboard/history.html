@@ -1,0 +1,20 @@
+{% extends "dashboard/base.html" %}
+
+{% block title %}Weather History{% endblock %}
+
+{% block content %}
+<h1>Weather History</h1>
+<p>Historical data and charts will appear here</p>
+
+<label>Start Date: <input type="date" id="start-date"></label>
+<label>End Date: <input type="date" id="end-date"></label>
+<button onclick="loadHistory()">Load History</button>
+
+<div id="chart-container"></div>
+
+<script>
+    function loadHistory() {
+        console.log('Load history clicked');
+    }
+</script>
+{% endblock %}
