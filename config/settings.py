@@ -25,6 +25,9 @@ SECRET_KEY = os.environ.get("SECRET_KEY", "django-insecure-CHANGE-ME")
 DEBUG = os.environ.get("DEBUG", "True").strip().lower() == "true"
 
 ALLOWED_HOSTS = [h.strip() for h in os.environ.get("ALLOWED_HOSTS", "").split(",") if h.strip()]
+# test server added to allowed hosts
+ALLOWED_HOSTS.extend(['localhost', '127.0.0.1', 'testserver'])
+
 
 # Application definition
 
