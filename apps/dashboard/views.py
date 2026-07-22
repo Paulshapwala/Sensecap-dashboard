@@ -52,14 +52,10 @@ def logout_view(request):
 
 # DATA ENDPOINTS (return JSON)
 
-
 @login_required
 @require_http_methods(["GET"])
 def data_history(request):
-    """
-    GET /data/history/?start=2024-01-15&end=2024-01-22
-    Returns list of readings for a date range
-    """
+    """GET /data/history/?start=2026-07-22T12:00:00+00:00&end=2026-07-22T13:00:00+00:00"""
     start_str = request.GET.get('start')
     end_str = request.GET.get('end')
     
@@ -67,15 +63,17 @@ def data_history(request):
         return JsonResponse({'error': 'start and end required'}, status=400)
     
     try:
+        print(f"Parsing start: {start_str}")
+        print(f"Parsing end: {end_str}")
         start = datetime.fromisoformat(start_str)
         end = datetime.fromisoformat(end_str)
-    except ValueError:
-        return JsonResponse({'error': 'Invalid date format'}, status=400)
+        print(f"Parsed successfully: {start} to {end}")
+    except (ValueError, TypeError) as e:
+        print(f"Error parsing: {e}")
+        return JsonResponse({'error': f'Invalid date format: {str(e)}'}, status=400)
     
-    # Get readings from weather app
     readings = get_readings(start, end)
     
-    # Serialize to JSON
     data = [
         {
             'time': r.received_at.isoformat(),
@@ -94,7 +92,6 @@ def data_history(request):
     ]
     
     return JsonResponse({'readings': data})
-
 
 @login_required
 @require_http_methods(["GET"])
