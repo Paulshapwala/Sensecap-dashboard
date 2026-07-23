@@ -19,7 +19,7 @@ from apps.weather.services import (
 @login_required
 def live(request):
     """GET / — Live dashboard page"""
-    return render(request, 'dashboard/live.html')
+    return render(request, 'dashboard/sse_live_dashboard.html')
 
 
 @login_required
