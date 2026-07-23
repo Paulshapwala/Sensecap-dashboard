@@ -1,24 +1,40 @@
-# apps/realtime/registry.py
 import queue
 import threading
 from typing import Dict
+import redis
+import json
+
+redis_client = redis.Redis(host='localhost', port=6379, db=0)
 
 class ClientRegistry:
     """
     Thread-safe registry of all connected SSE clients.
-    Each client has their own queue. When a reading arrives,
-    we broadcast to all queues.
+    Now with Redis listener for multi-worker broadcasting.
     """
     
     def __init__(self):
         self.clients: Dict[str, queue.Queue] = {}
         self.lock = threading.Lock()
+        self._start_redis_listener()
+    
+    def _start_redis_listener(self):
+        """Background thread listens to Redis for broadcasts from other workers"""
+        def listen():
+            pubsub = redis_client.pubsub()
+            pubsub.subscribe('weather_updates')
+            
+            print("[REGISTRY] Redis listener started")
+            for message in pubsub.listen():
+                if message['type'] == 'message':
+                    json_data = message['data'].decode()
+                    # Broadcast to all clients in THIS worker
+                    self._broadcast_local(json_data)
+        
+        thread = threading.Thread(target=listen, daemon=True)
+        thread.start()
     
     def register(self, client_id: str) -> queue.Queue:
-        """
-        Register a new client (called when browser connects to /stream/)
-        Returns: queue.Queue for this client
-        """
+        """Register a new client"""
         with self.lock:
             q = queue.Queue()
             self.clients[client_id] = q
@@ -26,34 +42,27 @@ class ClientRegistry:
             return q
     
     def remove(self, client_id: str) -> None:
-        """
-        Remove a client (called when browser disconnects)
-        """
+        """Remove a client"""
         with self.lock:
             if client_id in self.clients:
                 del self.clients[client_id]
                 print(f"[REGISTRY] Client removed: {client_id} (total: {len(self.clients)})")
     
-    def broadcast(self, json_data: str) -> None:
-        """
-        Broadcast a message to all connected clients.
-        Called by signal handler when new reading arrives.
-        """
+    def _broadcast_local(self, json_data: str) -> None:
+        """Broadcast to all clients in THIS worker only"""
         with self.lock:
             count = len(self.clients)
             if count == 0:
-                print(f"[REGISTRY] Broadcast: no clients connected")
                 return
             
             for client_id, q in self.clients.items():
                 try:
                     q.put_nowait(json_data)
                 except queue.Full:
-                    # Queue is full, client is slow — drop the message
                     print(f"[REGISTRY] Queue full for {client_id}, dropping message")
             
-            print(f"[REGISTRY] Broadcast to {count} client(s)")
+            print(f"[REGISTRY] Broadcast to {count} local client(s)")
 
 
-# Singleton instance — used everywhere in the app
+# Singleton instance — same as before
 registry = ClientRegistry()
