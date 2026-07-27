@@ -1,0 +1,259 @@
+{% extends "dashboard/base.html" %}
+
+{% block title %}Live Weather{% endblock %}
+
+{% block content %}
+<h1>Live Weather Dashboard</h1>
+
+<!-- Connection status indicator -->
+<div id="connection-status" style="padding: 10px; margin-bottom: 20px; border-radius: 5px; font-weight: bold;">
+    <span id="status-indicator" style="display: inline-block; width: 12px; height: 12px; border-radius: 50%; background: gray; margin-right: 10px;"></span>
+    <span id="status-text">Connecting...</span>
+</div>
+
+<!-- Last update timestamp -->
+<div id="last-update" style="color: #666; margin-bottom: 20px;">
+    Last update: Never
+</div>
+
+<!-- Weather metrics -->
+<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 20px; margin-top: 20px;">
+    
+    <div style="border: 1px solid #ddd; padding: 20px; border-radius: 8px; background: #f9f9f9;">
+        <h3 style="margin-top: 0; color: #333;">Temperature</h3>
+        <div id="temperature" style="font-size: 32px; font-weight: bold; color: #e74c3c;">--</div>
+        <div style="font-size: 12px; color: #999;">°C</div>
+    </div>
+
+    <div style="border: 1px solid #ddd; padding: 20px; border-radius: 8px; background: #f9f9f9;">
+        <h3 style="margin-top: 0; color: #333;">Humidity</h3>
+        <div id="humidity" style="font-size: 32px; font-weight: bold; color: #3498db;">--</div>
+        <div style="font-size: 12px; color: #999;">%</div>
+    </div>
+
+    <div style="border: 1px solid #ddd; padding: 20px; border-radius: 8px; background: #f9f9f9;">
+        <h3 style="margin-top: 0; color: #333;">Pressure</h3>
+        <div id="pressure" style="font-size: 32px; font-weight: bold; color: #2ecc71;">--</div>
+        <div style="font-size: 12px; color: #999;">hPa</div>
+    </div>
+
+    <div style="border: 1px solid #ddd; padding: 20px; border-radius: 8px; background: #f9f9f9;">
+        <h3 style="margin-top: 0; color: #333;">Wind Speed</h3>
+        <div id="wind_speed" style="font-size: 32px; font-weight: bold; color: #9b59b6;">--</div>
+        <div style="font-size: 12px; color: #999;">m/s</div>
+    </div>
+
+    <div style="border: 1px solid #ddd; padding: 20px; border-radius: 8px; background: #f9f9f9;">
+        <h3 style="margin-top: 0; color: #333;">Rainfall</h3>
+        <div id="rainfall" style="font-size: 32px; font-weight: bold; color: #16a085;">--</div>
+        <div style="font-size: 12px; color: #999;">mm</div>
+    </div>
+
+    <div style="border: 1px solid #ddd; padding: 20px; border-radius: 8px; background: #f9f9f9;">
+        <h3 style="margin-top: 0; color: #333;">Light Intensity</h3>
+        <div id="light_intensity" style="font-size: 32px; font-weight: bold; color: #f39c12;">--</div>
+        <div style="font-size: 12px; color: #999;">lux</div>
+    </div>
+
+</div>
+
+<!-- Debug console -->
+<details style="margin-top: 40px; padding: 20px; border: 1px solid #ddd; border-radius: 5px;">
+    <summary style="cursor: pointer; font-weight: bold; margin-bottom: 10px;">Debug Console (Click to expand)</summary>
+    <div id="debug-console" style="background: #f5f5f5; padding: 10px; border-radius: 3px; font-family: monospace; font-size: 12px; max-height: 300px; overflow-y: auto;">
+        <p style="margin: 0;">[Waiting for messages...]</p>
+    </div>
+</details>
+
+<script>
+    // Configuration
+    const STREAM_URL = '/stream/';
+    const MAX_DEBUG_LINES = 50;
+    
+    // State
+    let eventSource = null;
+    let debugLines = [];
+    let messageCount = 0;
+    
+    /**
+     * Add a line to the debug console
+     */
+    function addDebugLog(message) {
+        const timestamp = new Date().toLocaleTimeString();
+        const line = `[${timestamp}] ${message}`;
+        debugLines.push(line);
+        
+        // Keep only last N lines
+        if (debugLines.length > MAX_DEBUG_LINES) {
+            debugLines.shift();
+        }
+        
+        // Update DOM
+        const debugConsole = document.getElementById('debug-console');
+        debugConsole.innerHTML = debugLines
+            .map(line => `<p style="margin: 4px 0;">${line}</p>`)
+            .join('');
+        
+        // Auto-scroll to bottom
+        debugConsole.scrollTop = debugConsole.scrollHeight;
+        
+        console.log(message);
+    }
+    
+    /**
+     * Update connection status indicator
+     */
+    function setConnectionStatus(connected, message) {
+        const indicator = document.getElementById('status-indicator');
+        const statusText = document.getElementById('status-text');
+        const statusDiv = document.getElementById('connection-status');
+        
+        if (connected) {
+            indicator.style.background = '#2ecc71'; // Green
+            statusDiv.style.background = '#d5f4e6';
+            statusDiv.style.borderLeft = '4px solid #2ecc71';
+        } else {
+            indicator.style.background = '#e74c3c'; // Red
+            statusDiv.style.background = '#fadbd8';
+            statusDiv.style.borderLeft = '4px solid #e74c3c';
+        }
+        
+        statusText.textContent = message;
+    }
+    
+    /**
+     * Update a metric on the dashboard
+     */
+    function updateMetric(fieldName, value) {
+        const element = document.getElementById(fieldName);
+        if (element) {
+            // Format based on field type
+            let displayValue = value;
+            
+            if (typeof value === 'number') {
+                displayValue = value.toFixed(2);
+            }
+            
+            element.textContent = displayValue;
+            
+            // Flash animation
+            element.style.transition = 'background-color 0.3s';
+            element.parentElement.style.background = '#fff9e6';
+            setTimeout(() => {
+                element.parentElement.style.background = '#f9f9f9';
+            }, 300);
+        }
+    }
+    
+    /**
+     * Update the last update timestamp
+     */
+    function updateTimestamp(isoString) {
+        const date = new Date(isoString);
+        const formatted = date.toLocaleString();
+        document.getElementById('last-update').textContent = `Last update: ${formatted}`;
+    }
+    
+    /**
+     * Parse and handle incoming SSE message
+     */
+    function handleMessage(data) {
+        try {
+            messageCount++;
+            const reading = JSON.parse(data);
+            
+            addDebugLog(`✓ Message #${messageCount}: ${reading.device_id}`);
+            
+            // Update timestamp
+            if (reading.time) {
+                updateTimestamp(reading.time);
+            }
+            
+            // Update all metrics
+            const metrics = [
+                'temperature', 'humidity', 'pressure', 'wind_speed', 
+                'wind_direction', 'rainfall', 'light_intensity', 
+                'battery', 'rssi', 'snr'
+            ];
+            
+            metrics.forEach(metric => {
+                if (reading[metric] !== undefined) {
+                    updateMetric(metric, reading[metric]);
+                }
+            });
+            
+        } catch (error) {
+            addDebugLog(`✗ Parse error: ${error.message}`);
+            console.error('Failed to parse message:', data, error);
+        }
+    }
+    
+    /**
+     * Connect to SSE stream
+     */
+    function connectToStream() {
+        addDebugLog('Attempting to connect to SSE stream...');
+        setConnectionStatus(false, 'Connecting...');
+        
+        eventSource = new EventSource(STREAM_URL);
+        
+        eventSource.addEventListener('new_reading', (event) => {
+            handleMessage(event.data);
+        });
+        
+        eventSource.addEventListener('open', () => {
+            addDebugLog('✓ SSE connection established');
+            setConnectionStatus(true, 'Connected - Listening for updates');
+        });
+        
+        eventSource.addEventListener('error', (event) => {
+            addDebugLog(`✗ SSE error: ${event.type}`);
+            
+            if (eventSource.readyState === EventSource.CLOSED) {
+                addDebugLog('Connection closed');
+                setConnectionStatus(false, 'Disconnected');
+            } else if (eventSource.readyState === EventSource.CONNECTING) {
+                addDebugLog('Reconnecting...');
+                setConnectionStatus(false, 'Reconnecting...');
+            }
+        });
+        
+        // Handle server-sent keep-alives (no action needed, just for connection stability)
+        eventSource.addEventListener('message', (event) => {
+            if (event.data === '') {
+                // Keep-alive ping, ignore
+                return;
+            }
+        });
+    }
+    
+    /**
+     * Initialize on page load
+     */
+    window.addEventListener('load', () => {
+        addDebugLog('Dashboard loaded');
+        connectToStream();
+    });
+    
+    /**
+     * Cleanup on page unload
+     */
+    window.addEventListener('beforeunload', () => {
+        if (eventSource) {
+            eventSource.close();
+            addDebugLog('Connection closed');
+        }
+    });
+    
+    /**
+     * Attempt reconnection if needed (optional auto-reconnect)
+     */
+    window.addEventListener('focus', () => {
+        if (!eventSource || eventSource.readyState === EventSource.CLOSED) {
+            addDebugLog('Page regained focus, reconnecting...');
+            connectToStream();
+        }
+    });
+
+</script>
+{% endblock %}
