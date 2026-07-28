@@ -24,7 +24,6 @@ psycopg2-binary==2.9.12
 pycparser==3.0
 pyOpenSSL==26.3.0
 python-dotenv==1.2.2
-pywin32==312
 redis==8.0.1
 requests==2.34.2
 service-identity==26.1.0

@@ -1,0 +1,56 @@
+services:
+  redis:
+    image: redis:7-alpine
+    container_name: weather_updates
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+    restart: unless-stopped
+
+  django_server:
+    build: .
+    container_name: django_server
+    command: >
+      sh -c "python manage.py makemigrations &&
+             python manage.py migrate &&
+             python manage.py runserver 0.0.0.0:8000"
+    ports:
+      - "8000:8000"
+    depends_on:
+      redis:
+        condition: service_healthy
+    environment:
+      - REDIS_HOST=${REDIS_HOST:-redis}
+      - REDIS_PORT=${REDIS_PORT:-6379}
+      - DEBUG=${DEBUG:-False}
+    volumes:
+      - shared_db:/app
+    restart: unless-stopped
+
+  mqtt_client:
+    build: .
+    container_name: mqtt_client
+    command: >
+      sh -c "python manage.py migrate &&
+             python manage.py run_mqtt_client"
+    depends_on:
+      django_server:
+        condition: service_started
+      redis:
+        condition: service_healthy
+    environment:
+      - REDIS_HOST=${REDIS_HOST:-redis}
+      - REDIS_PORT=${REDIS_PORT:-6379}
+    volumes:
+      - shared_db:/app
+    restart: unless-stopped
+
+volumes:
+  redis_data:
+  shared_db:

@@ -7,3 +7,6 @@ __pycache__/
 *.pyo
 .vscode/
 dev_tests/
+/volumes/
+redis_data/
+shared_db/
