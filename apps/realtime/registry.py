@@ -12,15 +12,32 @@ import os
 
 REDIS_URL = os.environ.get("REDIS_URL")
 
+
 if REDIS_URL:
-    redis_client = redis.from_url(REDIS_URL)
+    # Railway's managed Redis requires these settings
+    redis_client = redis.from_url(
+        REDIS_URL,
+        decode_responses=True,
+        socket_keepalive=True,
+    )
 else:
     redis_client = redis.Redis(
         host=os.environ.get("REDIS_HOST", "localhost"),
         port=int(os.environ.get("REDIS_PORT", 6379)),
         db=0,
+        decode_responses=True,
     )
 
+# Test connection on startup
+try:
+    redis_client.ping()
+    print("[REGISTRY] Redis connected successfully")
+except redis.AuthenticationError as e:
+    print(f"[REGISTRY] Redis authentication failed: {e}")
+    raise
+except Exception as e:
+    print(f"[REGISTRY] Redis connection failed: {e}")
+    raise
 class ClientRegistry:
     """
     Thread-safe registry of all connected SSE clients.
