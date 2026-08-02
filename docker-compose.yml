@@ -1,3 +1,5 @@
+name: weatherdash
+
 services:
   redis:
     image: redis:7-alpine
@@ -17,8 +19,7 @@ services:
     build: .
     container_name: django_server
     command: >
-      sh -c "python manage.py makemigrations &&
-             python manage.py migrate &&
+      sh -c "python manage.py migrate &&
              python manage.py runserver 0.0.0.0:8000"
     ports:
       - "8000:8000"
@@ -26,11 +27,14 @@ services:
       redis:
         condition: service_healthy
     environment:
+      - DATABASE_URL=${DATABASE_URL}
       - REDIS_HOST=${REDIS_HOST:-redis}
       - REDIS_PORT=${REDIS_PORT:-6379}
       - DEBUG=${DEBUG:-False}
+      - ALLOWED_HOSTS=${ALLOWED_HOSTS:-localhost,127.0.0.1}
+      - CSRF_TRUSTED_ORIGINS=${CSRF_TRUSTED_ORIGINS:-}
     volumes:
-      - shared_db:/app
+      - .:/app
     restart: unless-stopped
 
   mqtt_client:
@@ -45,12 +49,12 @@ services:
       redis:
         condition: service_healthy
     environment:
+      - DATABASE_URL=${DATABASE_URL}
       - REDIS_HOST=${REDIS_HOST:-redis}
       - REDIS_PORT=${REDIS_PORT:-6379}
     volumes:
-      - shared_db:/app
+      - .:/app
     restart: unless-stopped
 
 volumes:
   redis_data:
-  shared_db:
