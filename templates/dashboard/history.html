@@ -13,8 +13,74 @@
 <div id="chart-container"></div>
 
 <script>
-    function loadHistory() {
-        console.log('Load history clicked');
+    const DATA_HISTORY_URL = "{% url 'data_history' %}";
+
+    async function loadHistory() {
+        const startDate = document.getElementById('start-date').value; // "YYYY-MM-DD"
+        const endDate = document.getElementById('end-date').value;
+
+        if (!startDate || !endDate) {
+            alert('Please select both a start and end date.');
+            return;
+        }
+
+        const start = new Date(`${startDate}T00:00:00`).toISOString();
+        const end = new Date(`${endDate}T23:59:59`).toISOString();
+
+        const url = `${DATA_HISTORY_URL}?start=${encodeURIComponent(start)}&end=${encodeURIComponent(end)}`;
+
+        try {
+            const response = await fetch(url, {
+                method: 'GET',
+                credentials: 'same-origin',
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest',
+                },
+            });
+
+            if (!response.ok) {
+                const err = await response.json().catch(() => ({}));
+                console.error('Error loading history:', response.status, err);
+                alert(err.error || `Request failed with status ${response.status}`);
+                return;
+            }
+
+            const data = await response.json();
+            console.log('Loaded readings:', data.readings);
+            renderHistory(data.readings);
+        } catch (e) {
+            console.error('Network or parsing error:', e);
+            alert('Something went wrong loading the history.');
+        }
+    }
+
+    function renderHistory(readings) {
+        const container = document.getElementById('chart-container');
+        if (!readings || readings.length === 0) {
+            container.innerHTML = '<p>No readings found for that range.</p>';
+            return;
+        }
+
+        const rows = readings.map(r => `
+            <tr>
+                <td>${r.time}</td>
+                <td>${r.device_id}</td>
+                <td>${r.temperature ?? ''}</td>
+                <td>${r.humidity ?? ''}</td>
+                <td>${r.pressure ?? ''}</td>
+            </tr>
+        `).join('');
+
+        container.innerHTML = `
+            <table border="1" cellpadding="4">
+                <thead>
+                    <tr>
+                        <th>Time</th><th>Device</th><th>Temp</th><th>Humidity</th><th>Pressure</th>
+                    </tr>
+                </thead>
+                <tbody>${rows}</tbody>
+            </table>
+        `;
     }
 </script>
 {% endblock %}
