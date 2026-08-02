@@ -10,11 +10,16 @@ import os
 # Inside Docker, services talk to each other by service name (e.g. "redis"),
 # not "localhost". When running locally, it falls back to localhost.
 
-redis_client = redis.Redis(
-    host=os.environ.get("REDIS_HOST", "localhost"),
-    port=int(os.environ.get("REDIS_PORT", 6379)),
-    db=0
-)
+REDIS_URL = os.environ.get("REDIS_URL")
+
+if REDIS_URL:
+    redis_client = redis.from_url(REDIS_URL)
+else:
+    redis_client = redis.Redis(
+        host=os.environ.get("REDIS_HOST", "localhost"),
+        port=int(os.environ.get("REDIS_PORT", 6379)),
+        db=0,
+    )
 
 class ClientRegistry:
     """
