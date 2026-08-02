@@ -9,7 +9,8 @@ https://docs.djangoproject.com/en/6.0/topics/settings/
 For the full list of settings and their values, see
 https://docs.djangoproject.com/en/6.0/ref/settings/
 """
-
+import psycopg2
+from psycopg2 import OperationalError
 import os
 from pathlib import Path
 
@@ -83,8 +84,23 @@ WSGI_APPLICATION = "config.wsgi.application"
 DATABASE_URL = os.environ.get("DATABASE_URL")
 
 if DATABASE_URL:
-    DATABASES = {"default": dj_database_url.parse(DATABASE_URL, conn_max_age=600, conn_health_checks=True,)}
+    DATABASES = {
+        "default": dj_database_url.parse(
+            DATABASE_URL,
+            conn_max_age=600,          # persistent connections (10 minutes)
+            conn_health_checks=True,   # Django 4.1+ – checks connection before reuse
+        )
+    }
+
+    # Extra connection options
+    DATABASES["default"].setdefault("OPTIONS", {})
+    DATABASES["default"]["OPTIONS"].update({
+        "connect_timeout": 10,         # seconds to wait for a connection
+        # Uncomment if you need SSL (common on managed Postgres)
+        # "sslmode": "require",
+    })
 else:
+    # Local development fallback
     DATABASES = {
         "default": {
             "ENGINE": "django.db.backends.sqlite3",
@@ -92,6 +108,12 @@ else:
         }
     }
 
+# Force closed connections during tests (prevents "database is being accessed by other users")
+import sys
+if "test" in sys.argv or "pytest" in sys.modules:
+    if "default" in DATABASES:
+        DATABASES["default"]["CONN_MAX_AGE"] = 0
+        
 # Password validation
 # https://docs.djangoproject.com/en/6.0/ref/settings/#auth-password-validators
 
