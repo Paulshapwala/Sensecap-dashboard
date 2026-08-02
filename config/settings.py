@@ -29,6 +29,11 @@ ALLOWED_HOSTS = [h.strip() for h in os.environ.get("ALLOWED_HOSTS", "").split(",
 # test server added to allowed hosts
 ALLOWED_HOSTS.extend(['localhost', '127.0.0.1', 'testserver'])
 
+CSRF_TRUSTED_ORIGINS = os.environ.get(
+    "CSRF_TRUSTED_ORIGINS",
+    "http://localhost:8000,http://127.0.0.1:8000"
+).split(",")
+
 
 # Application definition
 
