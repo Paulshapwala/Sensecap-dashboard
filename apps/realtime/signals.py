@@ -6,7 +6,7 @@ import json
 import os
 
 REDIS_URL = os.getenv('REDIS_URL')  
-REDIS_URL = os.getenv('REDIS_URL')
+
 
 print(f"[SIGNALS] REDIS_URL = {REDIS_URL}")  # ← ADD THIS
 print(f"[SIGNALS] All env keys: {list(os.environ.keys())}")  # ← ADD THIS
