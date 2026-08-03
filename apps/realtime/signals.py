@@ -6,11 +6,26 @@ import json
 import os
 
 
-redis_client = redis.Redis(
-    host=os.environ.get("REDIS_HOST", "localhost"),
-    port=int(os.environ.get("REDIS_PORT", 6379)),
-    db=0
-)
+if REDIS_URL:
+    # Managed Railway Redis config
+    redis_client = redis.from_url(
+        REDIS_URL,
+        decode_responses=True,
+        socket_keepalive=True,
+        socket_timeout=5.0,           # Prevents hanging connections
+        socket_connect_timeout=5.0,   # Fast failure if host is unreachable
+        retry_on_timeout=True,
+        protocol=2,
+    )
+else:
+    # Local development fallback
+    redis_client = redis.Redis(
+        host=os.environ.get("REDIS_HOST", "localhost"),
+        port=int(os.environ.get("REDIS_PORT", 6379)),
+        db=0,
+        decode_responses=True,
+    )
+    
 def serialize_reading(instance):
     """Convert WeatherReading instance to JSON"""
     data = {}
