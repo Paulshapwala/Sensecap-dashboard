@@ -5,6 +5,7 @@ import json
 
 import os
 
+REDIS_URL = os.getenv('REDIS_URL')  
 
 if REDIS_URL:
     # Managed Railway Redis config
@@ -25,7 +26,7 @@ else:
         db=0,
         decode_responses=True,
     )
-    
+
 def serialize_reading(instance):
     """Convert WeatherReading instance to JSON"""
     data = {}
