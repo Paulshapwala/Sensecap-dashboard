@@ -6,8 +6,25 @@ import json
 import os
 
 
-from realtime.signals import redis_client
+REDIS_URL = os.getenv('REDIS_URL')  
 
+if REDIS_URL:
+    print(f"[REALTIME] Using Railway Redis: {REDIS_URL[:30]}...")
+    # Managed Railway Redis config
+    redis_client = redis.from_url(
+        REDIS_URL,
+        decode_responses=True,
+        socket_keepalive=True,
+        socket_timeout=5.0,
+        socket_connect_timeout=5.0,
+        retry_on_timeout=True,
+        protocol=2,
+    )
+else:
+    error_msg = "[REALTIME] FATAL: REDIS_URL environment variable not set! Cannot start without Redis."
+    print(error_msg)
+    raise RuntimeError(error_msg)
+    
 # Test connection on startup
 try:
     redis_client.ping()
