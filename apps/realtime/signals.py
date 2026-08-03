@@ -24,14 +24,10 @@ if REDIS_URL:
         protocol=2,
     )
 else:
-    print(f"[SIGNALS] REDIS_URL not found, using localhost fallback")  # ← ADD THIS
-    # Local development fallback
-    redis_client = redis.Redis(
-        host=os.environ.get("REDIS_HOST", "localhost"),
-        port=int(os.environ.get("REDIS_PORT", 6379)),
-        db=0,
-        decode_responses=True,
-    )
+    error_msg = "[SIGNALS] FATAL: REDIS_URL environment variable not set! Cannot start without Redis."
+    print(error_msg)
+    raise RuntimeError(error_msg)
+    
 def serialize_reading(instance):
     """Convert WeatherReading instance to JSON"""
     data = {}
