@@ -6,7 +6,7 @@ import json
 import os
 
 
-from signals import redis_client
+from realtime.signals import redis_client
 
 # Test connection on startup
 try:
