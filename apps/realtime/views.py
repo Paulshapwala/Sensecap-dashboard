@@ -35,7 +35,7 @@ def stream(request):
                 now = time.time()
                 
                 # Heartbeat every 30 seconds
-                if now - last_heartbeat > 30:
+                if now - last_heartbeat > 10:
                     yield ': keep-alive\n\n'
                     last_heartbeat = now
                 
