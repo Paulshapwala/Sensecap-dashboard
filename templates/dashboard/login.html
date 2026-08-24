@@ -1,23 +1,366 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
+
 <head>
-    <title>Login</title>
+
+    <meta charset="UTF-8">
+
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>Login | Weather Monitoring System</title>
+
     <style>
-        body { font-family: Arial; max-width: 400px; margin: 50px auto; }
-        form { border: 1px solid #ccc; padding: 20px; }
-        input { width: 100%; padding: 10px; margin: 10px 0; box-sizing: border-box; }
-        button { width: 100%; padding: 10px; background: #333; color: white; border: none; }
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            margin: 0;
+            min-height: 100vh;
+
+            font-family:
+                Arial,
+                Helvetica,
+                sans-serif;
+
+            background:
+                linear-gradient(135deg,
+                    #eff6ff,
+                    #f8fafc);
+
+            display: flex;
+            align-items: center;
+            justify-content: center;
+
+            color: #172554;
+        }
+
+
+        /* =================================================
+           LOGIN CONTAINER
+           ================================================= */
+
+        .login-wrapper {
+            width: 100%;
+            max-width: 430px;
+            padding: 20px;
+        }
+
+
+        .login-card {
+            background: white;
+
+            border: 1px solid #e2e8f0;
+
+            border-radius: 18px;
+
+            padding: 38px;
+
+            box-shadow:
+                0 15px 40px rgba(15, 23, 42, 0.10);
+        }
+
+
+        /* =================================================
+           BRAND
+           ================================================= */
+
+        .brand {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+
+        .brand-icon {
+            width: 65px;
+            height: 65px;
+
+            margin: 0 auto 18px;
+
+            border-radius: 16px;
+
+            background: #2563eb;
+
+            display: flex;
+            align-items: center;
+            justify-content: center;
+
+            font-size: 30px;
+
+            box-shadow:
+                0 8px 20px rgba(37, 99, 235, 0.20);
+        }
+
+
+        .brand h1 {
+            margin: 0 0 8px;
+
+            font-size: 25px;
+
+            color: #172554;
+        }
+
+
+        .brand p {
+            margin: 0;
+
+            color: #64748b;
+
+            font-size: 13px;
+
+            line-height: 1.5;
+        }
+
+
+        /* =================================================
+           ERROR MESSAGE
+           ================================================= */
+
+        .error-message {
+            background: #fef2f2;
+
+            border: 1px solid #fecaca;
+
+            color: #b91c1c;
+
+            padding: 11px 13px;
+
+            border-radius: 8px;
+
+            margin-bottom: 20px;
+
+            font-size: 13px;
+        }
+
+
+        /* =================================================
+           FORM
+           ================================================= */
+
+        .form-group {
+            margin-bottom: 18px;
+        }
+
+
+        .form-group label {
+            display: block;
+
+            margin-bottom: 7px;
+
+            color: #334155;
+
+            font-size: 12px;
+
+            font-weight: 700;
+        }
+
+
+        .form-group input {
+            width: 100%;
+
+            padding: 12px 13px;
+
+            border: 1px solid #cbd5e1;
+
+            border-radius: 8px;
+
+            background: #f8fafc;
+
+            color: #334155;
+
+            font-family: inherit;
+
+            font-size: 14px;
+
+            outline: none;
+
+            transition:
+                border-color 0.2s ease,
+                box-shadow 0.2s ease,
+                background 0.2s ease;
+        }
+
+
+        .form-group input:focus {
+            border-color: #2563eb;
+
+            background: white;
+
+            box-shadow:
+                0 0 0 3px rgba(37, 99, 235, 0.10);
+        }
+
+
+        .form-group input::placeholder {
+            color: #94a3b8;
+        }
+
+
+        /* =================================================
+           LOGIN BUTTON
+           ================================================= */
+
+        .login-button {
+            width: 100%;
+
+            padding: 13px;
+
+            margin-top: 5px;
+
+            border: none;
+
+            border-radius: 8px;
+
+            background: #2563eb;
+
+            color: white;
+
+            font-family: inherit;
+
+            font-size: 14px;
+
+            font-weight: 700;
+
+            cursor: pointer;
+
+            transition:
+                background 0.2s ease,
+                transform 0.2s ease,
+                box-shadow 0.2s ease;
+        }
+
+
+        .login-button:hover {
+            background: #1d4ed8;
+
+            transform: translateY(-1px);
+
+            box-shadow:
+                0 5px 15px rgba(37, 99, 235, 0.20);
+        }
+
+
+        .login-button:active {
+            transform: translateY(0);
+        }
+
+
+        /* =================================================
+           FOOTER
+           ================================================= */
+
+        .login-footer {
+            text-align: center;
+
+            margin-top: 25px;
+
+            padding-top: 20px;
+
+            border-top: 1px solid #f1f5f9;
+
+            color: #94a3b8;
+
+            font-size: 11px;
+        }
+
+
+        /* =================================================
+           RESPONSIVE
+           ================================================= */
+
+        @media (max-width: 500px) {
+
+            .login-wrapper {
+                padding: 15px;
+            }
+
+            .login-card {
+                padding: 28px 22px;
+            }
+
+        }
     </style>
+
 </head>
+
+
 <body>
-    <h1>Login</h1>
-    {% if error %}<p style="color: red;">{{ error }}</p>{% endif %}
-    
-    <form method="post">
-        {% csrf_token %}
-        <input type="text" name="username" placeholder="Username" required>
-        <input type="password" name="password" placeholder="Password" required>
-        <button type="submit">Login</button>
-    </form>
+
+    <div class="login-wrapper">
+
+        <div class="login-card">
+
+            <!-- Brand -->
+            <div class="brand">
+
+                <div class="brand-icon">
+                    🌦️
+                </div>
+
+                <h1>Weather Monitoring</h1>
+
+                <p>
+                    Sign in to access the weather monitoring dashboard.
+                </p>
+
+            </div>
+
+
+            <!-- Error -->
+            {% if error %}
+
+            <div class="error-message">
+                {{ error }}
+            </div>
+
+            {% endif %}
+
+
+            <!-- Login form -->
+            <form method="post">
+
+                {% csrf_token %}
+
+
+                <div class="form-group">
+
+                    <label for="username">
+                        Username
+                    </label>
+
+                    <input type="text" id="username" name="username" placeholder="Enter your username"
+                        autocomplete="username" required>
+
+                </div>
+
+
+                <div class="form-group">
+
+                    <label for="password">
+                        Password
+                    </label>
+
+                    <input type="password" id="password" name="password" placeholder="Enter your password"
+                        autocomplete="current-password" required>
+
+                </div>
+
+
+                <button type="submit" class="login-button">
+                    Sign In
+                </button>
+
+            </form>
+
+
+            <div class="login-footer">
+                Weather Monitoring System
+            </div>
+
+        </div>
+
+    </div>
+
 </body>
+
 </html>

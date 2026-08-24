@@ -3,18 +3,511 @@
 {% block title %}Weather History{% endblock %}
 
 {% block content %}
-<h1>Weather History</h1>
-<p>Historical data and charts will appear here</p>
 
-<label>Start Date: <input type="date" id="start-date"></label>
-<label>End Date: <input type="date" id="end-date"></label>
-<button onclick="loadHistory()">Load History</button>
+<div class="history-header">
+    <div>
+        <div class="eyebrow">HISTORICAL ANALYTICS</div>
+        <h1>Weather History</h1>
+        <p>Explore historical environmental readings over a selected period.</p>
+    </div>
+</div>
 
-<div id="chart-container"></div>
+
+<!-- Date filter -->
+<div class="filter-panel">
+
+    <div class="filter-title">
+        <div class="filter-icon">📅</div>
+
+        <div>
+            <h2>Date Range</h2>
+            <p>Select the period you want to analyze.</p>
+        </div>
+    </div>
+
+
+    <div class="filter-controls">
+
+        <div class="date-field">
+            <label for="start-date">Start Date</label>
+            <input type="date" id="start-date">
+        </div>
+
+
+        <div class="date-field">
+            <label for="end-date">End Date</label>
+            <input type="date" id="end-date">
+        </div>
+
+
+        <button class="load-button" onclick="loadHistory()">
+            <span>↻</span>
+            Load History
+        </button>
+
+    </div>
+
+</div>
+
+
+<!-- Chart area -->
+<div class="chart-panel">
+
+    <div class="chart-header">
+
+        <div>
+            <h2>Weather Trends</h2>
+            <p>Historical weather measurements for the selected period.</p>
+        </div>
+
+        <div class="chart-status">
+            Ready
+        </div>
+
+    </div>
+
+
+    <div id="chart-container" class="chart-container">
+
+        <div class="empty-chart">
+
+            <div class="empty-icon">📊</div>
+
+            <h3>No historical data loaded</h3>
+
+            <p>
+                Select a start and end date above, then click
+                <strong>Load History</strong> to view historical weather trends.
+            </p>
+
+        </div>
+
+    </div>
+
+</div>
+
+
+<!-- Summary section -->
+<div class="history-summary">
+
+    <div class="summary-card">
+
+        <div class="summary-icon">🌡️</div>
+
+        <div>
+            <span>Temperature</span>
+            <strong>--</strong>
+        </div>
+
+    </div>
+
+
+    <div class="summary-card">
+
+        <div class="summary-icon">💧</div>
+
+        <div>
+            <span>Humidity</span>
+            <strong>--</strong>
+        </div>
+
+    </div>
+
+
+    <div class="summary-card">
+
+        <div class="summary-icon">🌧️</div>
+
+        <div>
+            <span>Rainfall</span>
+            <strong>--</strong>
+        </div>
+
+    </div>
+
+
+    <div class="summary-card">
+
+        <div class="summary-icon">💨</div>
+
+        <div>
+            <span>Wind Speed</span>
+            <strong>--</strong>
+        </div>
+
+    </div>
+
+</div>
+
+
+<style>
+    /* =========================================================
+   HEADER
+   ========================================================= */
+
+    .history-header {
+        margin-bottom: 25px;
+    }
+
+    .eyebrow {
+        color: #2563eb;
+        font-size: 11px;
+        font-weight: 800;
+        letter-spacing: 1.5px;
+        margin-bottom: 8px;
+    }
+
+    .history-header h1 {
+        margin: 0 0 8px;
+        color: #172554;
+        font-size: 30px;
+    }
+
+    .history-header p {
+        margin: 0;
+        color: #64748b;
+        font-size: 14px;
+    }
+
+
+    /* =========================================================
+   FILTER PANEL
+   ========================================================= */
+
+    .filter-panel {
+        background: white;
+        border: 1px solid #e2e8f0;
+        border-radius: 14px;
+        padding: 22px;
+        margin-bottom: 22px;
+
+        box-shadow: 0 3px 12px rgba(15, 23, 42, 0.05);
+    }
+
+    .filter-title {
+        display: flex;
+        align-items: center;
+        gap: 14px;
+        margin-bottom: 22px;
+    }
+
+    .filter-icon {
+        width: 42px;
+        height: 42px;
+
+        display: flex;
+        align-items: center;
+        justify-content: center;
+
+        background: #eff6ff;
+        border-radius: 10px;
+
+        font-size: 21px;
+    }
+
+    .filter-title h2 {
+        margin: 0 0 4px;
+        color: #172554;
+        font-size: 17px;
+    }
+
+    .filter-title p {
+        margin: 0;
+        color: #94a3b8;
+        font-size: 12px;
+    }
+
+
+    /* =========================================================
+   FILTER CONTROLS
+   ========================================================= */
+
+    .filter-controls {
+        display: flex;
+        align-items: flex-end;
+        gap: 18px;
+    }
+
+    .date-field {
+        flex: 1;
+    }
+
+    .date-field label {
+        display: block;
+        margin-bottom: 7px;
+
+        color: #475569;
+        font-size: 12px;
+        font-weight: 700;
+    }
+
+    .date-field input {
+        width: 100%;
+        padding: 11px 13px;
+
+        border: 1px solid #cbd5e1;
+        border-radius: 8px;
+
+        background: #f8fafc;
+        color: #334155;
+
+        font-family: inherit;
+        font-size: 13px;
+
+        outline: none;
+        transition: 0.2s ease;
+    }
+
+    .date-field input:focus {
+        border-color: #2563eb;
+        background: white;
+        box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.10);
+    }
+
+
+    .load-button {
+        height: 40px;
+        padding: 0 20px;
+
+        border: none;
+        border-radius: 8px;
+
+        background: #2563eb;
+        color: white;
+
+        font-family: inherit;
+        font-size: 13px;
+        font-weight: 700;
+
+        cursor: pointer;
+
+        display: flex;
+        align-items: center;
+        gap: 8px;
+
+        transition: 0.2s ease;
+    }
+
+    .load-button:hover {
+        background: #1d4ed8;
+        transform: translateY(-1px);
+    }
+
+
+    /* =========================================================
+   CHART PANEL
+   ========================================================= */
+
+    .chart-panel {
+        background: white;
+        border: 1px solid #e2e8f0;
+        border-radius: 14px;
+
+        margin-bottom: 22px;
+
+        box-shadow: 0 3px 12px rgba(15, 23, 42, 0.05);
+
+        overflow: hidden;
+    }
+
+    .chart-header {
+        padding: 20px 22px;
+
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+
+        border-bottom: 1px solid #e2e8f0;
+    }
+
+    .chart-header h2 {
+        margin: 0 0 5px;
+        color: #172554;
+        font-size: 18px;
+    }
+
+    .chart-header p {
+        margin: 0;
+        color: #94a3b8;
+        font-size: 12px;
+    }
+
+    .chart-status {
+        padding: 6px 11px;
+
+        border-radius: 20px;
+
+        background: #f1f5f9;
+        color: #64748b;
+
+        font-size: 11px;
+        font-weight: 700;
+    }
+
+
+    /* =========================================================
+   CHART EMPTY STATE
+   ========================================================= */
+
+    .chart-container {
+        min-height: 330px;
+
+        display: flex;
+        align-items: center;
+        justify-content: center;
+
+        padding: 35px;
+    }
+
+    .empty-chart {
+        text-align: center;
+        max-width: 480px;
+    }
+
+    .empty-icon {
+        width: 65px;
+        height: 65px;
+
+        margin: 0 auto 18px;
+
+        display: flex;
+        align-items: center;
+        justify-content: center;
+
+        background: #eff6ff;
+        border-radius: 50%;
+
+        font-size: 28px;
+    }
+
+    .empty-chart h3 {
+        margin: 0 0 8px;
+
+        color: #334155;
+        font-size: 17px;
+    }
+
+    .empty-chart p {
+        margin: 0;
+
+        color: #94a3b8;
+        font-size: 13px;
+        line-height: 1.6;
+    }
+
+
+    /* =========================================================
+   SUMMARY CARDS
+   ========================================================= */
+
+    .history-summary {
+        display: grid;
+        grid-template-columns: repeat(4, 1fr);
+        gap: 18px;
+    }
+
+    .summary-card {
+        background: white;
+
+        border: 1px solid #e2e8f0;
+        border-radius: 12px;
+
+        padding: 18px;
+
+        display: flex;
+        align-items: center;
+        gap: 13px;
+
+        box-shadow: 0 3px 10px rgba(15, 23, 42, 0.04);
+    }
+
+    .summary-icon {
+        width: 40px;
+        height: 40px;
+
+        display: flex;
+        align-items: center;
+        justify-content: center;
+
+        background: #f8fafc;
+        border-radius: 9px;
+
+        font-size: 19px;
+    }
+
+    .summary-card span {
+        display: block;
+
+        color: #94a3b8;
+        font-size: 11px;
+
+        margin-bottom: 4px;
+    }
+
+    .summary-card strong {
+        color: #172554;
+        font-size: 18px;
+    }
+
+
+    /* =========================================================
+   RESPONSIVE DESIGN
+   ========================================================= */
+
+    @media (max-width: 900px) {
+
+        .history-summary {
+            grid-template-columns: repeat(2, 1fr);
+        }
+
+        .filter-controls {
+            flex-wrap: wrap;
+        }
+
+        .date-field {
+            min-width: 200px;
+        }
+
+    }
+
+
+    @media (max-width: 600px) {
+
+        .history-header h1 {
+            font-size: 25px;
+        }
+
+        .filter-controls {
+            flex-direction: column;
+            align-items: stretch;
+        }
+
+        .load-button {
+            justify-content: center;
+        }
+
+        .history-summary {
+            grid-template-columns: 1fr;
+        }
+
+        .chart-header {
+            align-items: flex-start;
+            gap: 12px;
+            flex-direction: column;
+        }
+
+    }
+</style>
+
 
 <script>
+
     function loadHistory() {
+
         console.log('Load history clicked');
+
     }
+
 </script>
+
 {% endblock %}
