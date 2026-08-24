@@ -85,7 +85,7 @@ def save_reading(data: dict) -> WeatherReading:
         raw_payload=data.get("raw_payload"),
     )
 
-    reading_saved.send(sender=WeatherReading, instance=reading)
+    reading_saved.send(sender=WeatherReading, instance=reading) # signal to notify listeners that a new reading has been saved
     return reading
 
 
