@@ -56,7 +56,8 @@ class ClientRegistry:
             print("[REGISTRY] Redis listener started")
             for message in pubsub.listen():
                 if message['type'] == 'message':
-                    json_data = message['data'].decode()
+                    json_data = message['data']
+                    print(f"[REGISTRY] Received broadcast from Redis: {json_data[:50]}...")
                     # Broadcast to all clients in THIS worker
                     self._broadcast_local(json_data)
         
