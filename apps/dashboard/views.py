@@ -4,7 +4,7 @@ from django.contrib.auth.decorators import login_required
 from django.http import JsonResponse
 from django.views.decorators.http import require_http_methods
 from django.utils import timezone
-from datetime import datetime, timedelta
+from datetime import datetime, timezone as dt_timezone 
 from apps.weather.services import (
     get_latest_reading,
     get_readings,
@@ -52,8 +52,8 @@ def data_history(request):
         end_tz = timezone.make_aware(end_naive, tz)
         
         # Convert to UTC for database query
-        start_utc = start_tz.astimezone(timezone.utc)
-        end_utc = end_tz.astimezone(timezone.utc)
+        start_utc = start_tz.astimezone(dt_timezone.utc)
+        end_utc = end_tz.astimezone(dt_timezone.utc)
         
         print(f"User selected (EAT): {start_tz} to {end_tz}")
         print(f"Query DB (UTC): {start_utc} to {end_utc}")
