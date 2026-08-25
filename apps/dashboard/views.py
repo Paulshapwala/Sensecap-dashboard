@@ -1,12 +1,10 @@
 # apps/dashboard/views.py
-from django.shortcuts import render
 from django.shortcuts import render, redirect
 from django.contrib.auth.decorators import login_required
-from django.contrib.auth import authenticate, login, logout
 from django.http import JsonResponse
 from django.views.decorators.http import require_http_methods
-from django.views.decorators.csrf import csrf_exempt
-from datetime import datetime
+from django.utils import timezone
+from datetime import datetime, timedelta
 from apps.weather.services import (
     get_latest_reading,
     get_readings,
@@ -32,7 +30,11 @@ def history(request):
 @login_required
 @require_http_methods(["GET"])
 def data_history(request):
-    """GET /data/history/?start=2026-07-22T12:00:00+00:00&end=2026-07-22T13:00:00+00:00"""
+    """
+    GET /data/history/?start=2026-07-22T12:00:00&end=2026-07-22T13:00:00
+    Accepts times in user's local timezone, converts to UTC for query,
+    returns times in user's local timezone for display.
+    """
     start_str = request.GET.get('start')
     end_str = request.GET.get('end')
     
@@ -40,32 +42,44 @@ def data_history(request):
         return JsonResponse({'error': 'start and end required'}, status=400)
     
     try:
-        print(f"Parsing start: {start_str}")
-        print(f"Parsing end: {end_str}")
-        start = datetime.fromisoformat(start_str)
-        end = datetime.fromisoformat(end_str)
-        print(f"Parsed successfully: {start} to {end}")
+        # Parse incoming times as naive (no timezone info)
+        start_naive = datetime.fromisoformat(start_str)
+        end_naive = datetime.fromisoformat(end_str)
+        
+        # Localize to user's timezone (EAT), then convert to UTC for database query
+        tz = timezone.get_current_timezone()
+        start_tz = timezone.make_aware(start_naive, tz)
+        end_tz = timezone.make_aware(end_naive, tz)
+        
+        # Convert to UTC for database query
+        start_utc = start_tz.astimezone(timezone.utc)
+        end_utc = end_tz.astimezone(timezone.utc)
+        
+        print(f"User selected (EAT): {start_tz} to {end_tz}")
+        print(f"Query DB (UTC): {start_utc} to {end_utc}")
     except (ValueError, TypeError) as e:
-        print(f"Error parsing: {e}")
         return JsonResponse({'error': f'Invalid date format: {str(e)}'}, status=400)
     
-    readings = get_readings(start, end)
+    # Query database with UTC times
+    readings = get_readings(start_utc, end_utc)
     
+    # Convert results back to user's timezone for display
+    tz = timezone.get_current_timezone()
     data = [
         {
-            'time': r.received_at.isoformat(),
-            'device_id': r.device_id,
-            'temperature': r.temperature,
-            'humidity': r.humidity,
-            'pressure': r.pressure,
-            'wind_speed': r.wind_speed,
-            'wind_direction': r.wind_direction,
-            'rainfall': r.rainfall,
-            'light_intensity': r.light_intensity,
-            'rssi': r.rssi,
-            'snr': r.snr,
+            'time': readings_obj.received_at.astimezone(tz).isoformat(),
+            'device_id': readings_obj.device_id,
+            'temperature': readings_obj.temperature,
+            'humidity': readings_obj.humidity,
+            'pressure': readings_obj.pressure,
+            'wind_speed': readings_obj.wind_speed,
+            'wind_direction': readings_obj.wind_direction,
+            'rainfall': readings_obj.rainfall,
+            'light_intensity': readings_obj.light_intensity,
+            'rssi': readings_obj.rssi,
+            'snr': readings_obj.snr,
         }
-        for r in readings
+        for readings_obj in readings
     ]
     
     return JsonResponse({'readings': data})
@@ -74,26 +88,41 @@ def data_history(request):
 @require_http_methods(["GET"])
 def data_aggregates(request):
     """
-    GET /data/aggregates/?start=2024-01-15&end=2024-01-22&period=hourly|daily
-    Returns aggregated data (min, max, avg) for a period
+    GET /data/aggregates/?start=2026-07-22&end=2026-07-23&period=hourly|daily
+    Accepts times in user's local timezone, converts to UTC for query,
+    returns times in user's local timezone for display.
     """
     start_str = request.GET.get('start')
     end_str = request.GET.get('end')
-    period = request.GET.get('period', 'hourly')  # hourly or daily
+    period = request.GET.get('period', 'hourly')
     
     if not start_str or not end_str:
         return JsonResponse({'error': 'start and end required'}, status=400)
     
     try:
-        start = datetime.fromisoformat(start_str)
-        end = datetime.fromisoformat(end_str)
+        start_naive = datetime.fromisoformat(start_str)
+        end_naive = datetime.fromisoformat(end_str)
+        
+        tz = timezone.get_current_timezone()
+        start_tz = timezone.make_aware(start_naive, tz)
+        end_tz = timezone.make_aware(end_naive, tz)
+        
+        start_utc = start_tz.astimezone(timezone.utc)
+        end_utc = end_tz.astimezone(timezone.utc)
     except ValueError:
         return JsonResponse({'error': 'Invalid date format'}, status=400)
     
     # Get aggregates from weather app
-    aggregates = get_aggregates(start, end, period)
+    aggregates = get_aggregates(start_utc, end_utc, period)
     
-    # aggregates is already a dict/list, just return it
+    # Convert period_start times back to user's timezone
+    tz = timezone.get_current_timezone()
+    for agg in aggregates:
+        if 'period_start' in agg:
+            period_dt = datetime.fromisoformat(agg['period_start'])
+            period_aware = timezone.make_aware(period_dt, timezone.utc)
+            agg['period_start'] = period_aware.astimezone(tz).isoformat()
+    
     return JsonResponse({'aggregates': aggregates})
 
 
@@ -102,7 +131,15 @@ def data_aggregates(request):
 def data_device(request):
     """
     GET /data/device/
-    Returns current device status (battery, signal strength, etc.)
+    Returns current device status, with last_seen converted to user's timezone.
     """
     status = get_device_status()
+    
+    # Convert last_seen to user's timezone
+    if 'last_seen' in status:
+        tz = timezone.get_current_timezone()
+        last_seen_dt = datetime.fromisoformat(status['last_seen'])
+        last_seen_aware = timezone.make_aware(last_seen_dt, timezone.utc)
+        status['last_seen'] = last_seen_aware.astimezone(tz).isoformat()
+    
     return JsonResponse(status)
