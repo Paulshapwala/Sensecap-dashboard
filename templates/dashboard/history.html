@@ -13,7 +13,7 @@
 <div id="chart-container"></div>
 
 <script>
-    const DATA_HISTORY_URL = "{% url 'data_history' %}";
+    const DATA_HISTORY_URL = "{% url 'dashboard:data_history' %}";
 
     async function loadHistory() {
         const startDate = document.getElementById('start-date').value; // "YYYY-MM-DD"
