@@ -107,8 +107,8 @@ def data_aggregates(request):
         start_tz = timezone.make_aware(start_naive, tz)
         end_tz = timezone.make_aware(end_naive, tz)
         
-        start_utc = start_tz.astimezone(timezone.utc)
-        end_utc = end_tz.astimezone(timezone.utc)
+        start_utc = start_tz.astimezone(dt_timezone.utc)
+        end_utc = end_tz.astimezone(dt_timezone.utc)
     except ValueError:
         return JsonResponse({'error': 'Invalid date format'}, status=400)
     
@@ -120,7 +120,7 @@ def data_aggregates(request):
     for agg in aggregates:
         if 'period_start' in agg:
             period_dt = datetime.fromisoformat(agg['period_start'])
-            period_aware = timezone.make_aware(period_dt, timezone.utc)
+            period_aware = timezone.make_aware(period_dt, dt_timezone.utc)
             agg['period_start'] = period_aware.astimezone(tz).isoformat()
     
     return JsonResponse({'aggregates': aggregates})
@@ -139,7 +139,7 @@ def data_device(request):
     if 'last_seen' in status:
         tz = timezone.get_current_timezone()
         last_seen_dt = datetime.fromisoformat(status['last_seen'])
-        last_seen_aware = timezone.make_aware(last_seen_dt, timezone.utc)
+        last_seen_aware = timezone.make_aware(last_seen_dt, dt_timezone.utc)
         status['last_seen'] = last_seen_aware.astimezone(tz).isoformat()
     
     return JsonResponse(status)
