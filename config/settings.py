@@ -121,7 +121,8 @@ import sys
 if "test" in sys.argv or "pytest" in sys.modules:
     if "default" in DATABASES:
         DATABASES["default"]["CONN_MAX_AGE"] = 0
-        
+
+
 # Password validation
 # https://docs.djangoproject.com/en/6.0/ref/settings/#auth-password-validators
 
@@ -146,6 +147,12 @@ SESSION_EXPIRE_AT_BROWSER_CLOSE = False
 LOGIN_URL = "/login/"
 LOGIN_REDIRECT_URL = "/"
 LOGOUT_REDIRECT_URL = "/login/"
+
+# Invite-only registration
+INVITE_KEY = os.getenv('INVITE_KEY')
+if not INVITE_KEY:
+    raise ValueError("INVITE_KEY environment variable is not set")
+
 
 # Internationalization
 LANGUAGE_CODE = "en-us"
