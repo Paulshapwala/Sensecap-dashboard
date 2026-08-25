@@ -27,29 +27,6 @@ def history(request):
     """GET /history/ — Historical data page"""
     return render(request, 'dashboard/history.html')
 
-
-def login_view(request):
-    """GET /login/ or POST /login/ — Login page"""
-    if request.method == 'POST':
-        username = request.POST.get('username')
-        password = request.POST.get('password')
-        user = authenticate(request, username=username, password=password)
-        
-        if user is not None:
-            login(request, user)
-            return redirect('dashboard:live')  # Redirect to live page
-        else:
-            return render(request, 'dashboard/login.html', {'error': 'Invalid credentials'})
-    
-    return render(request, 'dashboard/login.html')
-
-
-@login_required
-def logout_view(request):
-    """GET /logout/ — Logout and redirect to login"""
-    logout(request)
-    return redirect('dashboard:login')
-
 # DATA ENDPOINTS (return JSON)
 
 @login_required
