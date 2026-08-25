@@ -6,17 +6,27 @@
 <h1>Weather History</h1>
 <p>Historical data and charts will appear here</p>
 
-<label>Start Date: <input type="date" id="start-date"></label>
-<label>End Date: <input type="date" id="end-date"></label>
-<button onclick="loadHistory()">Load History</button>
+<div style="margin: 20px 0; padding: 20px; background: #f5f5f5; border-radius: 8px;">
+    <label style="margin-right: 20px;">
+        Start Date: 
+        <input type="date" id="start-date" style="padding: 8px; border: 1px solid #ddd; border-radius: 4px;">
+    </label>
+    <label style="margin-right: 20px;">
+        End Date: 
+        <input type="date" id="end-date" style="padding: 8px; border: 1px solid #ddd; border-radius: 4px;">
+    </label>
+    <button onclick="loadHistory()" style="padding: 8px 16px; background: #007bff; color: white; border: none; border-radius: 4px; cursor: pointer;">
+        Load History
+    </button>
+</div>
 
-<div id="chart-container"></div>
+<div id="chart-container" style="margin-top: 20px;"></div>
 
 <script>
     const DATA_HISTORY_URL = "{% url 'dashboard:data_history' %}";
 
     async function loadHistory() {
-        const startDate = document.getElementById('start-date').value; // "YYYY-MM-DD"
+        const startDate = document.getElementById('start-date').value;
         const endDate = document.getElementById('end-date').value;
 
         if (!startDate || !endDate) {
@@ -24,8 +34,9 @@
             return;
         }
 
-        const start = new Date(`${startDate}T00:00:00`).toISOString();
-        const end = new Date(`${endDate}T23:59:59`).toISOString();
+        // Send dates as simple ISO strings (backend handles timezone conversion)
+        const start = `${startDate}T00:00:00`;
+        const end = `${endDate}T23:59:59`;
 
         const url = `${DATA_HISTORY_URL}?start=${encodeURIComponent(start)}&end=${encodeURIComponent(end)}`;
 
@@ -57,28 +68,40 @@
     function renderHistory(readings) {
         const container = document.getElementById('chart-container');
         if (!readings || readings.length === 0) {
-            container.innerHTML = '<p>No readings found for that range.</p>';
+            container.innerHTML = '<p style="color: #999;">No readings found for that range.</p>';
             return;
         }
 
-        const rows = readings.map(r => `
-            <tr>
-                <td>${r.time}</td>
-                <td>${r.device_id}</td>
-                <td>${r.temperature ?? ''}</td>
-                <td>${r.humidity ?? ''}</td>
-                <td>${r.pressure ?? ''}</td>
-            </tr>
-        `).join('');
+        // Format time for display (backend already returns times in user's timezone)
+        const rows = readings.map(r => {
+            const date = new Date(r.time);
+            const formattedTime = date.toLocaleString();
+            
+            return `
+                <tr>
+                    <td style="padding: 8px; border: 1px solid #ddd;">${formattedTime}</td>
+                    <td style="padding: 8px; border: 1px solid #ddd;">${r.device_id}</td>
+                    <td style="padding: 8px; border: 1px solid #ddd; text-align: right;">${r.temperature ?? '--'}</td>
+                    <td style="padding: 8px; border: 1px solid #ddd; text-align: right;">${r.humidity ?? '--'}</td>
+                    <td style="padding: 8px; border: 1px solid #ddd; text-align: right;">${r.pressure ?? '--'}</td>
+                </tr>
+            `;
+        }).join('');
 
         container.innerHTML = `
-            <table border="1" cellpadding="4">
-                <thead>
+            <table style="width: 100%; border-collapse: collapse; background: white; border: 1px solid #ddd; border-radius: 8px; overflow: hidden;">
+                <thead style="background: #f5f5f5;">
                     <tr>
-                        <th>Time</th><th>Device</th><th>Temp</th><th>Humidity</th><th>Pressure</th>
+                        <th style="padding: 12px; text-align: left; border: 1px solid #ddd; font-weight: bold;">Time (Local)</th>
+                        <th style="padding: 12px; text-align: left; border: 1px solid #ddd; font-weight: bold;">Device</th>
+                        <th style="padding: 12px; text-align: right; border: 1px solid #ddd; font-weight: bold;">Temp (°C)</th>
+                        <th style="padding: 12px; text-align: right; border: 1px solid #ddd; font-weight: bold;">Humidity (%)</th>
+                        <th style="padding: 12px; text-align: right; border: 1px solid #ddd; font-weight: bold;">Pressure (hPa)</th>
                     </tr>
                 </thead>
-                <tbody>${rows}</tbody>
+                <tbody>
+                    ${rows}
+                </tbody>
             </table>
         `;
     }
