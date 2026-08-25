@@ -66,14 +66,17 @@
 </details>
 
 <script>
+    
     // Configuration
     const STREAM_URL = '/stream/';
     const MAX_DEBUG_LINES = 50;
+    const DISCONNECT_TIMEOUT_MS = 20000; // 20 seconds
     
     // State
     let eventSource = null;
     let debugLines = [];
     let messageCount = 0;
+    let disconnectTimer = null;
     
     /**
      * Add a line to the debug console
@@ -83,37 +86,38 @@
         const line = `[${timestamp}] ${message}`;
         debugLines.push(line);
         
-        // Keep only last N lines
         if (debugLines.length > MAX_DEBUG_LINES) {
             debugLines.shift();
         }
         
-        // Update DOM
         const debugConsole = document.getElementById('debug-console');
         debugConsole.innerHTML = debugLines
             .map(line => `<p style="margin: 4px 0;">${line}</p>`)
             .join('');
         
-        // Auto-scroll to bottom
         debugConsole.scrollTop = debugConsole.scrollHeight;
-        
         console.log(message);
     }
     
     /**
      * Update connection status indicator
+     * Supports 'connected', 'connecting', and 'disconnected'
      */
-    function setConnectionStatus(connected, message) {
+    function setConnectionStatus(state, message) {
         const indicator = document.getElementById('status-indicator');
         const statusText = document.getElementById('status-text');
         const statusDiv = document.getElementById('connection-status');
         
-        if (connected) {
+        if (state === 'connected') {
             indicator.style.background = '#2ecc71'; // Green
             statusDiv.style.background = '#d5f4e6';
             statusDiv.style.borderLeft = '4px solid #2ecc71';
+        } else if (state === 'connecting') {
+            indicator.style.background = '#f1c40f'; // Yellow/Orange for connecting state
+            statusDiv.style.background = '#fef9e7';
+            statusDiv.style.borderLeft = '4px solid #f1c40f';
         } else {
-            indicator.style.background = '#e74c3c'; // Red
+            indicator.style.background = '#e74c3c'; // Red for confirmed drop
             statusDiv.style.background = '#fadbd8';
             statusDiv.style.borderLeft = '4px solid #e74c3c';
         }
@@ -127,16 +131,9 @@
     function updateMetric(fieldName, value) {
         const element = document.getElementById(fieldName);
         if (element) {
-            // Format based on field type
-            let displayValue = value;
-            
-            if (typeof value === 'number') {
-                displayValue = value.toFixed(2);
-            }
-            
+            let displayValue = typeof value === 'number' ? value.toFixed(2) : value;
             element.textContent = displayValue;
             
-            // Flash animation
             element.style.transition = 'background-color 0.3s';
             element.parentElement.style.background = '#fff9e6';
             setTimeout(() => {
@@ -150,8 +147,7 @@
      */
     function updateTimestamp(isoString) {
         const date = new Date(isoString);
-        const formatted = date.toLocaleString();
-        document.getElementById('last-update').textContent = `Last update: ${formatted}`;
+        document.getElementById('last-update').textContent = `Last update: ${date.toLocaleString()}`;
     }
     
     /**
@@ -164,12 +160,10 @@
             
             addDebugLog(`✓ Message #${messageCount}: ${reading.device_id}`);
             
-            // Update timestamp
             if (reading.time) {
                 updateTimestamp(reading.time);
             }
             
-            // Update all metrics
             const metrics = [
                 'temperature', 'humidity', 'pressure', 'wind_speed', 
                 'wind_direction', 'rainfall', 'light_intensity', 
@@ -192,8 +186,17 @@
      * Connect to SSE stream
      */
     function connectToStream() {
+        // Close existing connection and clear old timers if reconnecting manually
+        if (eventSource) {
+            eventSource.close();
+        }
+        if (disconnectTimer) {
+            clearTimeout(disconnectTimer);
+            disconnectTimer = null;
+        }
+
         addDebugLog('Attempting to connect to SSE stream...');
-        setConnectionStatus(false, 'Connecting...');
+        setConnectionStatus('connecting', 'Connecting...');
         
         eventSource = new EventSource(STREAM_URL);
         
@@ -202,58 +205,58 @@
         });
         
         eventSource.addEventListener('open', () => {
+            // Cancel any pending disconnect countdown
+            if (disconnectTimer) {
+                clearTimeout(disconnectTimer);
+                disconnectTimer = null;
+            }
             addDebugLog('✓ SSE connection established');
-            setConnectionStatus(true, 'Connected - Listening for updates');
+            setConnectionStatus('connected', 'Connected - Listening for updates');
         });
         
         eventSource.addEventListener('error', (event) => {
             addDebugLog(`✗ SSE error: ${event.type}`);
             
-            if (eventSource.readyState === EventSource.CLOSED) {
-                addDebugLog('Connection closed');
-                setConnectionStatus(false, 'Disconnected');
-            } else if (eventSource.readyState === EventSource.CONNECTING) {
-                addDebugLog('Reconnecting...');
-                setConnectionStatus(false, 'Reconnecting...');
+            // Delay updating the UI to red by 20 seconds
+            if (!disconnectTimer) {
+                disconnectTimer = setTimeout(() => {
+                    if (eventSource.readyState === EventSource.CLOSED) {
+                        addDebugLog('Connection closed (20s grace period ended)');
+                        setConnectionStatus('disconnected', 'Disconnected');
+                    } else if (eventSource.readyState === EventSource.CONNECTING) {
+                        addDebugLog('Reconnecting... (20s grace period ended)');
+                        setConnectionStatus('disconnected', 'Reconnecting...');
+                    }
+                }, DISCONNECT_TIMEOUT_MS);
             }
         });
         
-        // Handle server-sent keep-alives (no action needed, just for connection stability)
         eventSource.addEventListener('message', (event) => {
-            if (event.data === '') {
-                // Keep-alive ping, ignore
-                return;
-            }
+            if (event.data === '') return;
         });
     }
     
-    /**
-     * Initialize on page load
-     */
     window.addEventListener('load', () => {
         addDebugLog('Dashboard loaded');
         connectToStream();
     });
     
-    /**
-     * Cleanup on page unload
-     */
     window.addEventListener('beforeunload', () => {
         if (eventSource) {
             eventSource.close();
-            addDebugLog('Connection closed');
+        }
+        if (disconnectTimer) {
+            clearTimeout(disconnectTimer);
         }
     });
     
-    /**
-     * Attempt reconnection if needed (optional auto-reconnect)
-     */
     window.addEventListener('focus', () => {
         if (!eventSource || eventSource.readyState === EventSource.CLOSED) {
             addDebugLog('Page regained focus, reconnecting...');
             connectToStream();
         }
     });
+
 
 </script>
 {% endblock %}
