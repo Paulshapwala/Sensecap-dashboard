@@ -1,0 +1,201 @@
+<!-- templates/base.html -->
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Weather Dashboard{% endblock %}</title>
+    
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+    
+    <!-- Dracula Color Variables & Global Styles -->
+    <style>
+        :root {
+            --bg: #282A36;
+            --current-line: #44475A;
+            --foreground: #F8F8F2;
+            --comment: #6272A4;
+            --purple: #BD93F9;
+            --cyan: #8BE9FD;
+            --green: #50FA7B;
+            --orange: #FFB86C;
+            --pink: #FF79C6;
+            --red: #FF5555;
+            --yellow: #F1FA8C;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            background-color: var(--bg);
+            color: var(--foreground);
+            font-family: 'Inter', sans-serif;
+        }
+
+        a {
+            color: var(--purple);
+            text-decoration: none;
+            transition: color 0.2s;
+        }
+
+        a:hover {
+            color: var(--cyan);
+        }
+
+        /* Navigation Styles */
+        nav {
+            background-color: var(--current-line);
+            padding: 16px 20px;
+            margin-bottom: 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.4);
+        }
+
+        nav h2 {
+            color: var(--purple);
+            font-size: 20px;
+            font-weight: bold;
+        }
+
+        nav a {
+            color: var(--foreground);
+            margin-right: 20px;
+            font-size: 14px;
+        }
+
+        nav a:hover {
+            color: var(--purple);
+        }
+
+        /* Form Styles */
+        .form-card {
+            background-color: var(--current-line);
+            border-radius: 12px;
+            padding: 40px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.4);
+        }
+
+        .form-input {
+            background-color: var(--bg);
+            border: 1px solid var(--comment);
+            color: var(--foreground);
+            border-radius: 6px;
+            padding: 10px 14px;
+            width: 100%;
+            font-family: 'Inter', sans-serif;
+            font-size: 14px;
+        }
+
+        .form-input:focus {
+            outline: none;
+            border-color: var(--purple);
+            box-shadow: 0 0 0 3px rgba(189, 147, 249, 0.1);
+        }
+
+        .form-input::placeholder {
+            color: var(--comment);
+        }
+
+        .btn-primary {
+            background-color: var(--purple);
+            color: var(--bg);
+            font-weight: bold;
+            border: none;
+            border-radius: 6px;
+            padding: 12px 16px;
+            cursor: pointer;
+            width: 100%;
+            height: 44px;
+            font-size: 16px;
+            transition: background-color 0.2s;
+            font-family: 'Inter', sans-serif;
+        }
+
+        .btn-primary:hover {
+            background-color: #9A75D4;
+        }
+
+        .error-message {
+            color: var(--red);
+            font-size: 13px;
+            margin-top: 4px;
+        }
+
+        .form-label {
+            color: var(--comment);
+            font-size: 12px;
+            display: block;
+            margin-bottom: 6px;
+            font-weight: 500;
+        }
+
+        .form-group {
+            margin-bottom: 16px;
+        }
+
+        .help-text {
+            color: var(--comment);
+            font-size: 11px;
+            margin-top: 4px;
+        }
+
+        .success-message {
+            background-color: rgba(80, 250, 123, 0.1);
+            border: 1px solid var(--green);
+            color: var(--green);
+            padding: 12px 16px;
+            border-radius: 6px;
+            font-size: 14px;
+            margin-bottom: 16px;
+        }
+
+        .error-box {
+            background-color: rgba(255, 85, 85, 0.1);
+            border: 1px solid var(--red);
+            color: var(--red);
+            padding: 12px 16px;
+            border-radius: 6px;
+            font-size: 14px;
+            margin-bottom: 16px;
+        }
+    </style>
+</head>
+<body>
+    <!-- Navigation -->
+    <nav>
+        <h2>Weather Dashboard</h2>
+        <div>
+            {% if user.is_authenticated %}
+                <a href="{% url 'dashboard:live' %}">Live</a>
+                <a href="{% url 'dashboard:history' %}">History</a>
+                <a href="{% url 'logout' %}">Logout</a>
+                <form action="{% url 'logout' %}" method="post" style="display: inline;">
+                    {% csrf_token %}
+                    <button type="submit" style="background: none; border: none; color: var(--purple); cursor: pointer; text-decoration: underline;">
+                        Logout
+                    </button>
+                </form>
+            {% else %}
+                <a href="{% url 'login' %}">Login</a>
+                <a href="{% url 'signup' %}">Sign Up</a>
+            {% endif %}
+        </div>
+    </nav>
+
+    <!-- Main Content -->
+    <div>
+        {% block content %}{% endblock %}
+    </div>
+</body>
+</html>
