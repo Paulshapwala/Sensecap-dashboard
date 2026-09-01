@@ -1,262 +1,997 @@
 {% extends "base.html" %}
 
-{% block title %}Live Weather{% endblock %}
+{% block title %}Live Weather Monitoring{% endblock %}
 
 {% block content %}
-<h1>Live Weather Dashboard</h1>
 
-<!-- Connection status indicator -->
-<div id="connection-status" style="padding: 10px; margin-bottom: 20px; border-radius: 5px; font-weight: bold;">
-    <span id="status-indicator" style="display: inline-block; width: 12px; height: 12px; border-radius: 50%; background: gray; margin-right: 10px;"></span>
-    <span id="status-text">Connecting...</span>
+<div class="dashboard-header">
+    <div>
+        <div class="eyebrow">SENSECAP MONITORING SYSTEM</div>
+        <h1>Live Weather Monitoring</h1>
+        <p>Real-time environmental data from connected weather sensors.</p>
+    </div>
+
+    <div id="connection-status" class="connection-badge">
+        <span id="status-indicator" class="status-indicator"></span>
+        <span id="status-text">Connecting...</span>
+    </div>
 </div>
 
-<!-- Last update timestamp -->
-<div id="last-update" style="color: #666; margin-bottom: 20px;">
-    Last update: Never
+
+<!-- Last update -->
+<div class="update-bar">
+    <div>
+        <span class="update-label">LAST UPDATE</span>
+        <span id="last-update">Never</span>
+    </div>
+
+    <div class="stream-status">
+        <span class="pulse"></span>
+        Real-time stream
+    </div>
 </div>
 
-<!-- Weather metrics -->
-<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 20px; margin-top: 20px;">
-    
-    <div style="border: 1px solid #ddd; padding: 20px; border-radius: 8px; background: #f9f9f9;">
-        <h3 style="margin-top: 0; color: #333;">Temperature</h3>
-        <div id="temperature" style="font-size: 32px; font-weight: bold; color: #e74c3c;">--</div>
-        <div style="font-size: 12px; color: #999;">°C</div>
+
+<!-- Main weather metrics -->
+<div class="metrics-grid">
+
+    <!-- Temperature -->
+    <div class="metric-card temperature">
+        <div class="metric-top">
+            <div class="metric-icon">🌡️</div>
+            <span class="metric-category">TEMPERATURE</span>
+        </div>
+
+        <div class="metric-number">
+            <span id="temperature">--</span>
+            <span class="metric-unit">°C</span>
+        </div>
+
+        <p>Current air temperature</p>
     </div>
 
-    <div style="border: 1px solid #ddd; padding: 20px; border-radius: 8px; background: #f9f9f9;">
-        <h3 style="margin-top: 0; color: #333;">Humidity</h3>
-        <div id="humidity" style="font-size: 32px; font-weight: bold; color: #3498db;">--</div>
-        <div style="font-size: 12px; color: #999;">%</div>
+
+    <!-- Humidity -->
+    <div class="metric-card humidity">
+        <div class="metric-top">
+            <div class="metric-icon">💧</div>
+            <span class="metric-category">HUMIDITY</span>
+        </div>
+
+        <div class="metric-number">
+            <span id="humidity">--</span>
+            <span class="metric-unit">%</span>
+        </div>
+
+        <p>Relative humidity</p>
     </div>
 
-    <div style="border: 1px solid #ddd; padding: 20px; border-radius: 8px; background: #f9f9f9;">
-        <h3 style="margin-top: 0; color: #333;">Pressure</h3>
-        <div id="pressure" style="font-size: 32px; font-weight: bold; color: #2ecc71;">--</div>
-        <div style="font-size: 12px; color: #999;">hPa</div>
+
+    <!-- Pressure -->
+    <div class="metric-card pressure">
+        <div class="metric-top">
+            <div class="metric-icon">🌬️</div>
+            <span class="metric-category">PRESSURE</span>
+        </div>
+
+        <div class="metric-number">
+            <span id="pressure">--</span>
+            <span class="metric-unit">hPa</span>
+        </div>
+
+        <p>Atmospheric pressure</p>
     </div>
 
-    <div style="border: 1px solid #ddd; padding: 20px; border-radius: 8px; background: #f9f9f9;">
-        <h3 style="margin-top: 0; color: #333;">Wind Speed</h3>
-        <div id="wind_speed" style="font-size: 32px; font-weight: bold; color: #9b59b6;">--</div>
-        <div style="font-size: 12px; color: #999;">m/s</div>
+
+    <!-- Wind -->
+    <div class="metric-card wind">
+        <div class="metric-top">
+            <div class="metric-icon">💨</div>
+            <span class="metric-category">WIND SPEED</span>
+        </div>
+
+        <div class="metric-number">
+            <span id="wind_speed">--</span>
+            <span class="metric-unit">m/s</span>
+        </div>
+
+        <p>Current wind speed</p>
     </div>
 
-    <div style="border: 1px solid #ddd; padding: 20px; border-radius: 8px; background: #f9f9f9;">
-        <h3 style="margin-top: 0; color: #333;">Rainfall</h3>
-        <div id="rainfall" style="font-size: 32px; font-weight: bold; color: #16a085;">--</div>
-        <div style="font-size: 12px; color: #999;">mm</div>
+
+    <!-- Rainfall -->
+    <div class="metric-card rainfall">
+        <div class="metric-top">
+            <div class="metric-icon">🌧️</div>
+            <span class="metric-category">RAINFALL</span>
+        </div>
+
+        <div class="metric-number">
+            <span id="rainfall">--</span>
+            <span class="metric-unit">mm</span>
+        </div>
+
+        <p>Recorded precipitation</p>
     </div>
 
-    <div style="border: 1px solid #ddd; padding: 20px; border-radius: 8px; background: #f9f9f9;">
-        <h3 style="margin-top: 0; color: #333;">Light Intensity</h3>
-        <div id="light_intensity" style="font-size: 32px; font-weight: bold; color: #f39c12;">--</div>
-        <div style="font-size: 12px; color: #999;">lux</div>
+
+    <!-- Light -->
+    <div class="metric-card light">
+        <div class="metric-top">
+            <div class="metric-icon">☀️</div>
+            <span class="metric-category">LIGHT INTENSITY</span>
+        </div>
+
+        <div class="metric-number">
+            <span id="light_intensity">--</span>
+            <span class="metric-unit">lux</span>
+        </div>
+
+        <p>Ambient light level</p>
     </div>
 
 </div>
 
-<!-- Debug console -->
-<details style="margin-top: 40px; padding: 20px; border: 1px solid #ddd; border-radius: 5px;">
-    <summary style="cursor: pointer; font-weight: bold; margin-bottom: 10px;">Debug Console (Click to expand)</summary>
-    <div id="debug-console" style="background: #f5f5f5; padding: 10px; border-radius: 3px; font-family: monospace; font-size: 12px; max-height: 300px; overflow-y: auto;">
-        <p style="margin: 0;">[Waiting for messages...]</p>
+
+<!-- Additional sensor information -->
+<div class="secondary-grid">
+
+    <div class="info-panel">
+        <div class="panel-title">
+            <div>
+                <h2>Sensor Status</h2>
+                <p>Additional device information</p>
+            </div>
+
+            <span class="panel-icon">📡</span>
+        </div>
+
+        <div class="info-items">
+
+            <div class="info-item">
+                <span>Wind Direction</span>
+                <strong id="wind_direction">--</strong>
+            </div>
+
+            <div class="info-item">
+                <span>Battery</span>
+                <strong id="battery">--</strong>
+            </div>
+
+            <div class="info-item">
+                <span>Signal Strength</span>
+                <strong id="rssi">--</strong>
+            </div>
+
+            <div class="info-item">
+                <span>Signal Quality</span>
+                <strong id="snr">--</strong>
+            </div>
+
+        </div>
     </div>
+
+
+    <div class="info-panel system-panel">
+        <div class="panel-title">
+            <div>
+                <h2>System Connection</h2>
+                <p>Live data stream status</p>
+            </div>
+
+            <span class="panel-icon">⚡</span>
+        </div>
+
+        <div class="connection-large">
+            <span class="connection-large-dot"></span>
+
+            <div>
+                <strong id="system-connection-text">
+                    Waiting for connection
+                </strong>
+
+                <span>
+                    SenseCAP data stream
+                </span>
+            </div>
+        </div>
+
+        <div class="stream-url">
+            STREAM: /stream/
+        </div>
+    </div>
+
+</div>
+
+
+<!-- Developer debug section -->
+<details class="debug-panel">
+
+    <summary>
+        <span>Developer Debug Console</span>
+        <span class="debug-toggle">Show / Hide</span>
+    </summary>
+
+    <div id="debug-console">
+        <p>[Waiting for messages...]</p>
+    </div>
+
 </details>
 
+
+<style>
+    /* =========================================================
+   HEADER
+   ========================================================= */
+
+    .dashboard-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        gap: 20px;
+        margin-bottom: 22px;
+    }
+
+    .eyebrow {
+        color: #2563eb;
+        font-size: 11px;
+        font-weight: 800;
+        letter-spacing: 1.5px;
+        margin-bottom: 8px;
+    }
+
+    .dashboard-header h1 {
+        margin: 0 0 8px;
+        color: #172554;
+        font-size: 30px;
+    }
+
+    .dashboard-header p {
+        margin: 0;
+        color: #64748b;
+        font-size: 14px;
+    }
+
+
+    /* =========================================================
+   CONNECTION STATUS
+   ========================================================= */
+
+    .connection-badge {
+        display: flex;
+        align-items: center;
+        gap: 9px;
+        padding: 10px 16px;
+        border-radius: 30px;
+        background: #f1f5f9;
+        color: #475569;
+        font-size: 13px;
+        font-weight: 700;
+        white-space: nowrap;
+    }
+
+    .status-indicator {
+        width: 10px;
+        height: 10px;
+        border-radius: 50%;
+        background: #94a3b8;
+    }
+
+
+    /* =========================================================
+   UPDATE BAR
+   ========================================================= */
+
+    .update-bar {
+        background: white;
+        border: 1px solid #e2e8f0;
+        border-radius: 10px;
+        padding: 14px 18px;
+        margin-bottom: 22px;
+
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+
+        box-shadow: 0 2px 8px rgba(15, 23, 42, 0.04);
+
+        font-size: 13px;
+        color: #475569;
+    }
+
+    .update-label {
+        color: #94a3b8;
+        font-size: 10px;
+        font-weight: 800;
+        letter-spacing: 1px;
+        margin-right: 10px;
+    }
+
+    .stream-status {
+        display: flex;
+        align-items: center;
+        gap: 7px;
+        color: #059669;
+        font-weight: 600;
+    }
+
+    .pulse {
+        width: 7px;
+        height: 7px;
+        background: #10b981;
+        border-radius: 50%;
+    }
+
+
+    /* =========================================================
+   METRIC CARDS
+   ========================================================= */
+
+    .metrics-grid {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 18px;
+        margin-bottom: 22px;
+    }
+
+    .metric-card {
+        background: white;
+        border: 1px solid #e2e8f0;
+        border-radius: 14px;
+        padding: 22px;
+
+        box-shadow: 0 3px 12px rgba(15, 23, 42, 0.05);
+
+        transition: transform 0.2s ease,
+            box-shadow 0.2s ease;
+    }
+
+    .metric-card:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 8px 20px rgba(15, 23, 42, 0.09);
+    }
+
+    .metric-top {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 20px;
+    }
+
+    .metric-icon {
+        width: 42px;
+        height: 42px;
+        border-radius: 10px;
+
+        display: flex;
+        align-items: center;
+        justify-content: center;
+
+        font-size: 21px;
+    }
+
+    .metric-category {
+        font-size: 10px;
+        font-weight: 800;
+        color: #94a3b8;
+        letter-spacing: 0.8px;
+    }
+
+    .metric-number {
+        color: #172554;
+        font-size: 34px;
+        font-weight: 800;
+        line-height: 1;
+    }
+
+    .metric-unit {
+        font-size: 14px;
+        color: #64748b;
+        font-weight: 500;
+    }
+
+    .metric-card p {
+        margin: 12px 0 0;
+        color: #94a3b8;
+        font-size: 12px;
+    }
+
+
+    /* Individual card accents */
+
+    .temperature .metric-icon {
+        background: #fee2e2;
+    }
+
+    .humidity .metric-icon {
+        background: #dbeafe;
+    }
+
+    .pressure .metric-icon {
+        background: #dcfce7;
+    }
+
+    .wind .metric-icon {
+        background: #f3e8ff;
+    }
+
+    .rainfall .metric-icon {
+        background: #ccfbf1;
+    }
+
+    .light .metric-icon {
+        background: #fef3c7;
+    }
+
+
+    /* =========================================================
+   SECONDARY PANELS
+   ========================================================= */
+
+    .secondary-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 18px;
+        margin-bottom: 22px;
+    }
+
+    .info-panel {
+        background: white;
+        border: 1px solid #e2e8f0;
+        border-radius: 14px;
+        padding: 22px;
+
+        box-shadow: 0 3px 12px rgba(15, 23, 42, 0.05);
+    }
+
+    .panel-title {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+
+        padding-bottom: 17px;
+        margin-bottom: 5px;
+
+        border-bottom: 1px solid #f1f5f9;
+    }
+
+    .panel-title h2 {
+        margin: 0 0 4px;
+        color: #172554;
+        font-size: 17px;
+    }
+
+    .panel-title p {
+        margin: 0;
+        color: #94a3b8;
+        font-size: 12px;
+    }
+
+    .panel-icon {
+        font-size: 22px;
+    }
+
+
+    /* Sensor information */
+
+    .info-item {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+
+        padding: 13px 0;
+
+        border-bottom: 1px solid #f8fafc;
+    }
+
+    .info-item:last-child {
+        border-bottom: none;
+    }
+
+    .info-item span {
+        color: #64748b;
+        font-size: 13px;
+    }
+
+    .info-item strong {
+        color: #172554;
+        font-size: 14px;
+    }
+
+
+    /* Connection panel */
+
+    .connection-large {
+        display: flex;
+        align-items: center;
+        gap: 13px;
+        padding: 22px 0;
+    }
+
+    .connection-large-dot {
+        width: 13px;
+        height: 13px;
+        background: #94a3b8;
+        border-radius: 50%;
+    }
+
+    .connection-large strong {
+        display: block;
+        color: #334155;
+        font-size: 14px;
+        margin-bottom: 4px;
+    }
+
+    .connection-large span {
+        color: #94a3b8;
+        font-size: 12px;
+    }
+
+    .stream-url {
+        padding: 10px 12px;
+        border-radius: 7px;
+        background: #f8fafc;
+        color: #64748b;
+        font-family: monospace;
+        font-size: 11px;
+    }
+
+
+    /* =========================================================
+   DEBUG CONSOLE
+   ========================================================= */
+
+    .debug-panel {
+        background: #0f172a;
+        border-radius: 12px;
+        overflow: hidden;
+        color: #cbd5e1;
+    }
+
+    .debug-panel summary {
+        cursor: pointer;
+        padding: 15px 18px;
+
+        display: flex;
+        justify-content: space-between;
+
+        font-size: 13px;
+        font-weight: 700;
+    }
+
+    .debug-toggle {
+        color: #64748b;
+        font-size: 11px;
+    }
+
+    #debug-console {
+        max-height: 280px;
+        overflow-y: auto;
+
+        padding: 15px 18px;
+
+        border-top: 1px solid #1e293b;
+
+        font-family: Consolas, monospace;
+        font-size: 11px;
+    }
+
+    #debug-console p {
+        margin: 4px 0;
+        color: #94a3b8;
+    }
+
+
+    /* =========================================================
+   RESPONSIVE DESIGN
+   ========================================================= */
+
+    @media (max-width: 1000px) {
+
+        .metrics-grid {
+            grid-template-columns: repeat(2, 1fr);
+        }
+
+    }
+
+    @media (max-width: 750px) {
+
+        .dashboard-header {
+            flex-direction: column;
+        }
+
+        .secondary-grid {
+            grid-template-columns: 1fr;
+        }
+
+    }
+
+    @media (max-width: 600px) {
+
+        .metrics-grid {
+            grid-template-columns: 1fr;
+        }
+
+        .update-bar {
+            flex-direction: column;
+            align-items: flex-start;
+            gap: 10px;
+        }
+
+        .dashboard-header h1 {
+            font-size: 25px;
+        }
+
+    }
+</style>
+
+
 <script>
-    
+
     // Configuration
     const STREAM_URL = '/stream/';
     const MAX_DEBUG_LINES = 50;
-    const DISCONNECT_TIMEOUT_MS = 20000; // 20 seconds
-    
+
     // State
     let eventSource = null;
     let debugLines = [];
     let messageCount = 0;
-    let disconnectTimer = null;
-    
+
+
     /**
      * Add a line to the debug console
      */
     function addDebugLog(message) {
+
         const timestamp = new Date().toLocaleTimeString();
         const line = `[${timestamp}] ${message}`;
+
         debugLines.push(line);
-        
+
         if (debugLines.length > MAX_DEBUG_LINES) {
             debugLines.shift();
         }
-        
-        const debugConsole = document.getElementById('debug-console');
+
+        const debugConsole =
+            document.getElementById('debug-console');
+
         debugConsole.innerHTML = debugLines
-            .map(line => `<p style="margin: 4px 0;">${line}</p>`)
+            .map(line => `<p>${line}</p>`)
             .join('');
-        
-        debugConsole.scrollTop = debugConsole.scrollHeight;
+
+        debugConsole.scrollTop =
+            debugConsole.scrollHeight;
+
         console.log(message);
     }
-    
+
+
     /**
      * Update connection status indicator
-     * Supports 'connected', 'connecting', and 'disconnected'
      */
-    function setConnectionStatus(state, message) {
-        const indicator = document.getElementById('status-indicator');
-        const statusText = document.getElementById('status-text');
-        const statusDiv = document.getElementById('connection-status');
-        
-        if (state === 'connected') {
-            indicator.style.background = '#2ecc71'; // Green
-            statusDiv.style.background = '#d5f4e6';
-            statusDiv.style.borderLeft = '4px solid #2ecc71';
-        } else if (state === 'connecting') {
-            indicator.style.background = '#f1c40f'; // Yellow/Orange for connecting state
-            statusDiv.style.background = '#fef9e7';
-            statusDiv.style.borderLeft = '4px solid #f1c40f';
+    function setConnectionStatus(connected, message) {
+
+        const indicator =
+            document.getElementById('status-indicator');
+
+        const statusText =
+            document.getElementById('status-text');
+
+        const statusDiv =
+            document.getElementById('connection-status');
+
+        const systemText =
+            document.getElementById('system-connection-text');
+
+        const systemDot =
+            document.querySelector('.connection-large-dot');
+
+
+        if (connected) {
+
+            indicator.style.background = '#10b981';
+
+            statusDiv.style.background = '#ecfdf5';
+            statusDiv.style.color = '#047857';
+
+            systemDot.style.background = '#10b981';
+
+            systemText.textContent =
+                'Connected - Receiving data';
+
         } else {
-            indicator.style.background = '#e74c3c'; // Red for confirmed drop
-            statusDiv.style.background = '#fadbd8';
-            statusDiv.style.borderLeft = '4px solid #e74c3c';
+
+            indicator.style.background = '#ef4444';
+
+            statusDiv.style.background = '#fef2f2';
+            statusDiv.style.color = '#b91c1c';
+
+            systemDot.style.background = '#ef4444';
+
+            systemText.textContent = message;
+
         }
-        
+
         statusText.textContent = message;
     }
-    
+
+
     /**
-     * Update a metric on the dashboard
+     * Update a metric
      */
     function updateMetric(fieldName, value) {
-        const element = document.getElementById(fieldName);
+
+        const element =
+            document.getElementById(fieldName);
+
         if (element) {
-            let displayValue = typeof value === 'number' ? value.toFixed(2) : value;
+
+            let displayValue = value;
+
+            if (typeof value === 'number') {
+                displayValue = value.toFixed(2);
+            }
+
             element.textContent = displayValue;
-            
-            element.style.transition = 'background-color 0.3s';
-            element.parentElement.style.background = '#fff9e6';
-            setTimeout(() => {
-                element.parentElement.style.background = '#f9f9f9';
-            }, 300);
+
+            const card =
+                element.closest('.metric-card');
+
+            if (card) {
+
+                card.style.transform = 'scale(1.015)';
+
+                setTimeout(() => {
+                    card.style.transform = '';
+                }, 250);
+
+            }
+
         }
     }
-    
+
+
     /**
-     * Update the last update timestamp
+     * Update timestamp
      */
     function updateTimestamp(isoString) {
+
         const date = new Date(isoString);
-        document.getElementById('last-update').textContent = `Last update: ${date.toLocaleString()}`;
+
+        const formatted =
+            date.toLocaleString();
+
+        document.getElementById('last-update')
+            .textContent = formatted;
     }
-    
+
+
     /**
-     * Parse and handle incoming SSE message
+     * Handle incoming SSE message
      */
     function handleMessage(data) {
+
         try {
+
             messageCount++;
-            const reading = JSON.parse(data);
-            
-            addDebugLog(`✓ Message #${messageCount}: ${reading.device_id}`);
-            
+
+            const reading =
+                JSON.parse(data);
+
+            addDebugLog(
+                `✓ Message #${messageCount}: ${reading.device_id}`
+            );
+
+
             if (reading.time) {
                 updateTimestamp(reading.time);
             }
-            
+
+
             const metrics = [
-                'temperature', 'humidity', 'pressure', 'wind_speed', 
-                'wind_direction', 'rainfall', 'light_intensity', 
-                'battery', 'rssi', 'snr'
+                'temperature',
+                'humidity',
+                'pressure',
+                'wind_speed',
+                'wind_direction',
+                'rainfall',
+                'light_intensity',
+                'battery',
+                'rssi',
+                'snr'
             ];
-            
+
+
             metrics.forEach(metric => {
+
                 if (reading[metric] !== undefined) {
-                    updateMetric(metric, reading[metric]);
+                    updateMetric(
+                        metric,
+                        reading[metric]
+                    );
                 }
+
             });
-            
+
         } catch (error) {
-            addDebugLog(`✗ Parse error: ${error.message}`);
-            console.error('Failed to parse message:', data, error);
+
+            addDebugLog(
+                `✗ Parse error: ${error.message}`
+            );
+
+            console.error(
+                'Failed to parse message:',
+                data,
+                error
+            );
+
         }
     }
-    
+
+
     /**
      * Connect to SSE stream
      */
     function connectToStream() {
-        // Close existing connection and clear old timers if reconnecting manually
-        if (eventSource) {
-            eventSource.close();
-        }
-        if (disconnectTimer) {
-            clearTimeout(disconnectTimer);
-            disconnectTimer = null;
-        }
 
-        addDebugLog('Attempting to connect to SSE stream...');
-        setConnectionStatus('connecting', 'Connecting...');
-        
-        eventSource = new EventSource(STREAM_URL);
-        
-        eventSource.addEventListener('new_reading', (event) => {
-            handleMessage(event.data);
-        });
-        
-        eventSource.addEventListener('open', () => {
-            // Cancel any pending disconnect countdown
-            if (disconnectTimer) {
-                clearTimeout(disconnectTimer);
-                disconnectTimer = null;
+        addDebugLog(
+            'Attempting to connect to SSE stream...'
+        );
+
+        setConnectionStatus(
+            false,
+            'Connecting...'
+        );
+
+
+        eventSource =
+            new EventSource(STREAM_URL);
+
+
+        eventSource.addEventListener(
+            'new_reading',
+            (event) => {
+                handleMessage(event.data);
             }
-            addDebugLog('✓ SSE connection established');
-            setConnectionStatus('connected', 'Connected - Listening for updates');
-        });
-        
-        eventSource.addEventListener('error', (event) => {
-            addDebugLog(`✗ SSE error: ${event.type}`);
-            
-            // Delay updating the UI to red by 20 seconds
-            if (!disconnectTimer) {
-                disconnectTimer = setTimeout(() => {
-                    if (eventSource.readyState === EventSource.CLOSED) {
-                        addDebugLog('Connection closed (20s grace period ended)');
-                        setConnectionStatus('disconnected', 'Disconnected');
-                    } else if (eventSource.readyState === EventSource.CONNECTING) {
-                        addDebugLog('Reconnecting... (20s grace period ended)');
-                        setConnectionStatus('disconnected', 'Reconnecting...');
-                    }
-                }, DISCONNECT_TIMEOUT_MS);
+        );
+
+
+        eventSource.addEventListener(
+            'open',
+            () => {
+
+                addDebugLog(
+                    '✓ SSE connection established'
+                );
+
+                setConnectionStatus(
+                    true,
+                    'Connected - Listening for updates'
+                );
+
             }
-        });
-        
-        eventSource.addEventListener('message', (event) => {
-            if (event.data === '') return;
-        });
+        );
+
+
+        eventSource.addEventListener(
+            'error',
+            (event) => {
+
+                addDebugLog(
+                    `✗ SSE error: ${event.type}`
+                );
+
+
+                if (
+                    eventSource.readyState ===
+                    EventSource.CLOSED
+                ) {
+
+                    addDebugLog(
+                        'Connection closed'
+                    );
+
+                    setConnectionStatus(
+                        false,
+                        'Disconnected'
+                    );
+
+                } else if (
+                    eventSource.readyState ===
+                    EventSource.CONNECTING
+                ) {
+
+                    addDebugLog(
+                        'Reconnecting...'
+                    );
+
+                    setConnectionStatus(
+                        false,
+                        'Reconnecting...'
+                    );
+
+                }
+
+            }
+        );
+
+
+        eventSource.addEventListener(
+            'message',
+            (event) => {
+
+                if (event.data === '') {
+                    return;
+                }
+
+            }
+        );
+
     }
-    
-    window.addEventListener('load', () => {
-        addDebugLog('Dashboard loaded');
-        connectToStream();
-    });
-    
-    window.addEventListener('beforeunload', () => {
-        if (eventSource) {
-            eventSource.close();
-        }
-        if (disconnectTimer) {
-            clearTimeout(disconnectTimer);
-        }
-    });
-    
-    window.addEventListener('focus', () => {
-        if (!eventSource || eventSource.readyState === EventSource.CLOSED) {
-            addDebugLog('Page regained focus, reconnecting...');
-            connectToStream();
-        }
-    });
 
+
+    /**
+     * Initialize dashboard
+     */
+    window.addEventListener(
+        'load',
+        () => {
+
+            addDebugLog(
+                'Dashboard loaded'
+            );
+
+            connectToStream();
+
+        }
+    );
+
+
+    /**
+     * Cleanup
+     */
+    window.addEventListener(
+        'beforeunload',
+        () => {
+
+            if (eventSource) {
+
+                eventSource.close();
+
+                addDebugLog(
+                    'Connection closed'
+                );
+
+            }
+
+        }
+    );
+
+
+    /**
+     * Reconnect when page regains focus
+     */
+    window.addEventListener(
+        'focus',
+        () => {
+
+            if (
+                !eventSource ||
+                eventSource.readyState ===
+                EventSource.CLOSED
+            ) {
+
+                addDebugLog(
+                    'Page regained focus, reconnecting...'
+                );
+
+                connectToStream();
+
+            }
+
+        }
+    );
 
 </script>
+
 {% endblock %}
