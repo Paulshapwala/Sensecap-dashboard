@@ -47,7 +47,7 @@ _VALIDATION_RANGES = {
     "wind_speed": (0.0, 60.0),
     "wind_direction": (0.0, 360.0),
     "rainfall": (0.0, 9999.0),
-    "light_intensity": (0.0, 120000.0),
+    "light_intensity": (0.0, 160000.0),
     "battery": (0.0, 100.0),
     "rssi": (-150, 0),
     "snr": (-20.0, 20.0),

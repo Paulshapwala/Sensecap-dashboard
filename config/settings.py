@@ -95,7 +95,7 @@ if DATABASE_URL:
     DATABASES = {
         "default": dj_database_url.parse(
             DATABASE_URL,
-            conn_max_age=600,          # persistent connections (10 minutes)
+            conn_max_age=60,          # recycles connections after 60 seconds
             conn_health_checks=True,   # Django 4.1+ – checks connection before reuse
         )
     }

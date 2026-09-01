@@ -3,41 +3,522 @@
 {% block title %}Weather History{% endblock %}
 
 {% block content %}
-<h1>Weather History</h1>
-<p>Historical data and charts will appear here</p>
 
-<div style="margin: 20px 0; padding: 20px; background: #f5f5f5; border-radius: 8px;">
-    <label style="margin-right: 20px;">
-        Start Date: 
-        <input type="date" id="start-date" style="padding: 8px; border: 1px solid #ddd; border-radius: 4px;">
-    </label>
-    <label style="margin-right: 20px;">
-        End Date: 
-        <input type="date" id="end-date" style="padding: 8px; border: 1px solid #ddd; border-radius: 4px;">
-    </label>
-    <button onclick="loadHistory()" style="padding: 8px 16px; background: #007bff; color: white; border: none; border-radius: 4px; cursor: pointer;">
-        Load History
-    </button>
+<div class="history-header">
+    <div>
+        <div class="eyebrow">HISTORICAL ANALYTICS</div>
+        <h1>Weather History</h1>
+        <p>Explore historical environmental readings over a selected period.</p>
+    </div>
 </div>
 
-<div id="chart-container" style="margin-top: 20px;"></div>
 
+<!-- Date filter -->
+<div class="filter-panel">
+
+    <div class="filter-title">
+        <div class="filter-icon">📅</div>
+
+        <div>
+            <h2>Date Range</h2>
+            <p>Select the period you want to analyze.</p>
+        </div>
+    </div>
+
+
+    <div class="filter-controls">
+
+        <div class="date-field">
+            <label for="start-date">Start Date</label>
+            <input type="date" id="start-date">
+        </div>
+
+
+        <div class="date-field">
+            <label for="end-date">End Date</label>
+            <input type="date" id="end-date">
+        </div>
+
+
+        <button class="load-button" onclick="loadHistory()">
+            <span>↻</span>
+            Load History
+        </button>
+
+    </div>
+
+</div>
+
+
+<!-- Chart area -->
+<div class="chart-panel">
+
+    <div class="chart-header">
+
+        <div>
+            <h2>Weather Trends</h2>
+            <p>Historical weather measurements for the selected period.</p>
+        </div>
+
+        <div class="chart-status">
+            Ready
+        </div>
+
+    </div>
+
+
+    <div id="chart-container" class="chart-container">
+
+        <div class="empty-chart">
+
+            <div class="empty-icon">📊</div>
+
+            <h3>No historical data loaded</h3>
+
+            <p>
+                Select a start and end date above, then click
+                <strong>Load History</strong> to view historical weather trends.
+            </p>
+
+        </div>
+
+    </div>
+
+</div>
+
+
+<!-- Summary section -->
+<div class="history-summary">
+
+    <div class="summary-card">
+
+        <div class="summary-icon">🌡️</div>
+
+        <div>
+            <span>Temperature</span>
+            <strong>--</strong>
+        </div>
+
+    </div>
+
+
+    <div class="summary-card">
+
+        <div class="summary-icon">💧</div>
+
+        <div>
+            <span>Humidity</span>
+            <strong>--</strong>
+        </div>
+
+    </div>
+
+
+    <div class="summary-card">
+
+        <div class="summary-icon">🌧️</div>
+
+        <div>
+            <span>Rainfall</span>
+            <strong>--</strong>
+        </div>
+
+    </div>
+
+
+    <div class="summary-card">
+
+        <div class="summary-icon">💨</div>
+
+        <div>
+            <span>Wind Speed</span>
+            <strong>--</strong>
+        </div>
+
+    </div>
+
+</div>
+
+
+<style>
+    /* =========================================================
+   HEADER
+   ========================================================= */
+
+    .history-header {
+        margin-bottom: 25px;
+    }
+
+    .eyebrow {
+        color: #2563eb;
+        font-size: 11px;
+        font-weight: 800;
+        letter-spacing: 1.5px;
+        margin-bottom: 8px;
+    }
+
+    .history-header h1 {
+        margin: 0 0 8px;
+        color: #172554;
+        font-size: 30px;
+    }
+
+    .history-header p {
+        margin: 0;
+        color: #64748b;
+        font-size: 14px;
+    }
+
+
+    /* =========================================================
+   FILTER PANEL
+   ========================================================= */
+
+    .filter-panel {
+        background: white;
+        border: 1px solid #e2e8f0;
+        border-radius: 14px;
+        padding: 22px;
+        margin-bottom: 22px;
+
+        box-shadow: 0 3px 12px rgba(15, 23, 42, 0.05);
+    }
+
+    .filter-title {
+        display: flex;
+        align-items: center;
+        gap: 14px;
+        margin-bottom: 22px;
+    }
+
+    .filter-icon {
+        width: 42px;
+        height: 42px;
+
+        display: flex;
+        align-items: center;
+        justify-content: center;
+
+        background: #eff6ff;
+        border-radius: 10px;
+
+        font-size: 21px;
+    }
+
+    .filter-title h2 {
+        margin: 0 0 4px;
+        color: #172554;
+        font-size: 17px;
+    }
+
+    .filter-title p {
+        margin: 0;
+        color: #94a3b8;
+        font-size: 12px;
+    }
+
+
+    /* =========================================================
+   FILTER CONTROLS
+   ========================================================= */
+
+    .filter-controls {
+        display: flex;
+        align-items: flex-end;
+        gap: 18px;
+    }
+
+    .date-field {
+        flex: 1;
+    }
+
+    .date-field label {
+        display: block;
+        margin-bottom: 7px;
+
+        color: #475569;
+        font-size: 12px;
+        font-weight: 700;
+    }
+
+    .date-field input {
+        width: 100%;
+        padding: 11px 13px;
+
+        border: 1px solid #cbd5e1;
+        border-radius: 8px;
+
+        background: #f8fafc;
+        color: #334155;
+
+        font-family: inherit;
+        font-size: 13px;
+
+        outline: none;
+        transition: 0.2s ease;
+    }
+
+    .date-field input:focus {
+        border-color: #2563eb;
+        background: white;
+        box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.10);
+    }
+
+
+    .load-button {
+        height: 40px;
+        padding: 0 20px;
+
+        border: none;
+        border-radius: 8px;
+
+        background: #2563eb;
+        color: white;
+
+        font-family: inherit;
+        font-size: 13px;
+        font-weight: 700;
+
+        cursor: pointer;
+
+        display: flex;
+        align-items: center;
+        gap: 8px;
+
+        transition: 0.2s ease;
+    }
+
+    .load-button:hover {
+        background: #1d4ed8;
+        transform: translateY(-1px);
+    }
+
+
+    /* =========================================================
+   CHART PANEL
+   ========================================================= */
+
+    .chart-panel {
+        background: white;
+        border: 1px solid #e2e8f0;
+        border-radius: 14px;
+
+        margin-bottom: 22px;
+
+        box-shadow: 0 3px 12px rgba(15, 23, 42, 0.05);
+
+        overflow: hidden;
+    }
+
+    .chart-header {
+        padding: 20px 22px;
+
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+
+        border-bottom: 1px solid #e2e8f0;
+    }
+
+    .chart-header h2 {
+        margin: 0 0 5px;
+        color: #172554;
+        font-size: 18px;
+    }
+
+    .chart-header p {
+        margin: 0;
+        color: #94a3b8;
+        font-size: 12px;
+    }
+
+    .chart-status {
+        padding: 6px 11px;
+
+        border-radius: 20px;
+
+        background: #f1f5f9;
+        color: #64748b;
+
+        font-size: 11px;
+        font-weight: 700;
+    }
+
+
+    /* =========================================================
+   CHART EMPTY STATE
+   ========================================================= */
+
+    .chart-container {
+        min-height: 330px;
+
+        display: flex;
+        align-items: center;
+        justify-content: center;
+
+        padding: 35px;
+    }
+
+    .empty-chart {
+        text-align: center;
+        max-width: 480px;
+    }
+
+    .empty-icon {
+        width: 65px;
+        height: 65px;
+
+        margin: 0 auto 18px;
+
+        display: flex;
+        align-items: center;
+        justify-content: center;
+
+        background: #eff6ff;
+        border-radius: 50%;
+
+        font-size: 28px;
+    }
+
+    .empty-chart h3 {
+        margin: 0 0 8px;
+
+        color: #334155;
+        font-size: 17px;
+    }
+
+    .empty-chart p {
+        margin: 0;
+
+        color: #94a3b8;
+        font-size: 13px;
+        line-height: 1.6;
+    }
+
+
+    /* =========================================================
+   SUMMARY CARDS
+   ========================================================= */
+
+    .history-summary {
+        display: grid;
+        grid-template-columns: repeat(4, 1fr);
+        gap: 18px;
+    }
+
+    .summary-card {
+        background: white;
+
+        border: 1px solid #e2e8f0;
+        border-radius: 12px;
+
+        padding: 18px;
+
+        display: flex;
+        align-items: center;
+        gap: 13px;
+
+        box-shadow: 0 3px 10px rgba(15, 23, 42, 0.04);
+    }
+
+    .summary-icon {
+        width: 40px;
+        height: 40px;
+
+        display: flex;
+        align-items: center;
+        justify-content: center;
+
+        background: #f8fafc;
+        border-radius: 9px;
+
+        font-size: 19px;
+    }
+
+    .summary-card span {
+        display: block;
+
+        color: #94a3b8;
+        font-size: 11px;
+
+        margin-bottom: 4px;
+    }
+
+    .summary-card strong {
+        color: #172554;
+        font-size: 18px;
+    }
+
+
+    /* =========================================================
+   RESPONSIVE DESIGN
+   ========================================================= */
+
+    @media (max-width: 900px) {
+
+        .history-summary {
+            grid-template-columns: repeat(2, 1fr);
+        }
+
+        .filter-controls {
+            flex-wrap: wrap;
+        }
+
+        .date-field {
+            min-width: 200px;
+        }
+
+    }
+
+
+    @media (max-width: 600px) {
+
+        .history-header h1 {
+            font-size: 25px;
+        }
+
+        .filter-controls {
+            flex-direction: column;
+            align-items: stretch;
+        }
+
+        .load-button {
+            justify-content: center;
+        }
+
+        .history-summary {
+            grid-template-columns: 1fr;
+        }
+
+        .chart-header {
+            align-items: flex-start;
+            gap: 12px;
+            flex-direction: column;
+        }
+
+    }
+</style>
 <script>
     const DATA_HISTORY_URL = "{% url 'dashboard:data_history' %}";
 
     async function loadHistory() {
         const startDate = document.getElementById('start-date').value;
         const endDate = document.getElementById('end-date').value;
+        const statusEl = document.querySelector('.chart-status');
 
         if (!startDate || !endDate) {
             alert('Please select both a start and end date.');
             return;
         }
 
-        // Send dates as simple ISO strings (backend handles timezone conversion)
+        if (statusEl) {
+            statusEl.textContent = 'Loading...';
+            statusEl.style.background = '#e0f2fe';
+            statusEl.style.color = '#0369a1';
+        }
+
         const start = `${startDate}T00:00:00`;
         const end = `${endDate}T23:59:59`;
-
         const url = `${DATA_HISTORY_URL}?start=${encodeURIComponent(start)}&end=${encodeURIComponent(end)}`;
 
         try {
@@ -53,57 +534,98 @@
                 const err = await response.json().catch(() => ({}));
                 console.error('Error loading history:', response.status, err);
                 alert(err.error || `Request failed with status ${response.status}`);
+                if (statusEl) {
+                    statusEl.textContent = 'Error';
+                    statusEl.style.background = '#fef2f2';
+                    statusEl.style.color = '#b91c1c';
+                }
                 return;
             }
 
             const data = await response.json();
-            console.log('Loaded readings:', data.readings);
             renderHistory(data.readings);
+
+            if (statusEl) {
+                statusEl.textContent = 'Updated';
+                statusEl.style.background = '#f0fdf4';
+                statusEl.style.color = '#15803d';
+            }
         } catch (e) {
             console.error('Network or parsing error:', e);
             alert('Something went wrong loading the history.');
+            if (statusEl) {
+                statusEl.textContent = 'Error';
+                statusEl.style.background = '#fef2f2';
+                statusEl.style.color = '#b91c1c';
+            }
         }
     }
 
     function renderHistory(readings) {
         const container = document.getElementById('chart-container');
+        const summaryCards = document.querySelectorAll('.summary-card strong');
+
         if (!readings || readings.length === 0) {
-            container.innerHTML = '<p style="color: #999;">No readings found for that range.</p>';
+            container.innerHTML = `
+                <div class="empty-chart">
+                    <div class="empty-icon">⚠️</div>
+                    <h3>No readings found</h3>
+                    <p>There are no recorded readings for the selected date range.</p>
+                </div>`;
+            summaryCards.forEach(card => card.textContent = '--');
             return;
         }
 
-        // Format time for display (backend already returns times in user's timezone)
+        let totalTemp = 0, countTemp = 0;
+        let totalHumidity = 0, countHumidity = 0;
+        let totalPressure = 0, countPressure = 0;
+
         const rows = readings.map(r => {
             const date = new Date(r.time);
             const formattedTime = date.toLocaleString();
-            
+
+            if (r.temperature != null) { totalTemp += Number(r.temperature); countTemp++; }
+            if (r.humidity != null) { totalHumidity += Number(r.humidity); countHumidity++; }
+            if (r.pressure != null) { totalPressure += Number(r.pressure); countPressure++; }
+
             return `
-                <tr>
-                    <td style="padding: 8px; border: 1px solid #ddd;">${formattedTime}</td>
-                    <td style="padding: 8px; border: 1px solid #ddd;">${r.device_id}</td>
-                    <td style="padding: 8px; border: 1px solid #ddd; text-align: right;">${r.temperature ?? '--'}</td>
-                    <td style="padding: 8px; border: 1px solid #ddd; text-align: right;">${r.humidity ?? '--'}</td>
-                    <td style="padding: 8px; border: 1px solid #ddd; text-align: right;">${r.pressure ?? '--'}</td>
+                <tr style="border-bottom: 1px solid #f1f5f9;">
+                    <td style="padding: 12px 16px; color: #334155; font-size: 13px;">${formattedTime}</td>
+                    <td style="padding: 12px 16px; color: #334155; font-size: 13px;">${r.device_id}</td>
+                    <td style="padding: 12px 16px; color: #334155; font-size: 13px; text-align: right;">${r.temperature != null ? r.temperature + ' °C' : '--'}</td>
+                    <td style="padding: 12px 16px; color: #334155; font-size: 13px; text-align: right;">${r.humidity != null ? r.humidity + ' %' : '--'}</td>
+                    <td style="padding: 12px 16px; color: #334155; font-size: 13px; text-align: right;">${r.pressure != null ? r.pressure + ' hPa' : '--'}</td>
                 </tr>
             `;
         }).join('');
 
         container.innerHTML = `
-            <table style="width: 100%; border-collapse: collapse; background: white; border: 1px solid #ddd; border-radius: 8px; overflow: hidden;">
-                <thead style="background: #f5f5f5;">
-                    <tr>
-                        <th style="padding: 12px; text-align: left; border: 1px solid #ddd; font-weight: bold;">Time (Local)</th>
-                        <th style="padding: 12px; text-align: left; border: 1px solid #ddd; font-weight: bold;">Device</th>
-                        <th style="padding: 12px; text-align: right; border: 1px solid #ddd; font-weight: bold;">Temp (°C)</th>
-                        <th style="padding: 12px; text-align: right; border: 1px solid #ddd; font-weight: bold;">Humidity (%)</th>
-                        <th style="padding: 12px; text-align: right; border: 1px solid #ddd; font-weight: bold;">Pressure (hPa)</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    ${rows}
-                </tbody>
-            </table>
+            <div style="width: 100%; overflow-x: auto;">
+                <table style="width: 100%; border-collapse: collapse; background: white; text-align: left;">
+                    <thead>
+                        <tr style="background: #f8fafc; border-bottom: 1px solid #e2e8f0;">
+                            <th style="padding: 12px 16px; color: #475569; font-size: 12px; font-weight: 700;">Time (Local)</th>
+                            <th style="padding: 12px 16px; color: #475569; font-size: 12px; font-weight: 700;">Device</th>
+                            <th style="padding: 12px 16px; color: #475569; font-size: 12px; font-weight: 700; text-align: right;">Temp</th>
+                            <th style="padding: 12px 16px; color: #475569; font-size: 12px; font-weight: 700; text-align: right;">Humidity</th>
+                            <th style="padding: 12px 16px; color: #475569; font-size: 12px; font-weight: 700; text-align: right;">Pressure</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${rows}
+                    </tbody>
+                </table>
+            </div>
         `;
+
+        // Update dynamic bottom summary cards
+        if (summaryCards.length >= 4) {
+            summaryCards[0].textContent = countTemp ? `${(totalTemp / countTemp).toFixed(1)} °C` : '--';
+            summaryCards[1].textContent = countHumidity ? `${(totalHumidity / countHumidity).toFixed(1)} %` : '--';
+            summaryCards[2].textContent = countPressure ? `${(totalPressure / countPressure).toFixed(1)} hPa` : '--';
+            summaryCards[3].textContent = readings.length; // Total count display
+        }
     }
 </script>
+
 {% endblock %}

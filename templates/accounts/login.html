@@ -1,68 +1,366 @@
-<!-- templates/accounts/login.html -->
+<!DOCTYPE html>
+<html lang="en">
 
-{% extends 'base.html' %}
+<head>
 
-{% block title %}Login - Weather Dashboard{% endblock %}
+    <meta charset="UTF-8">
 
-{% block content %}
-<div class="min-h-screen flex items-center justify-center p-4" style="background-color: var(--bg);">
-    <div class="w-full max-w-md">
-        <div class="form-card">
-            <!-- Logo -->
-            <div class="text-center mb-8">
-                <svg class="w-12 h-12 mx-auto mb-4" style="color: var(--purple);" fill="currentColor" viewBox="0 0 24 24">
-                    <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8zm3.5-9c.83 0 1.5-.67 1.5-1.5S16.33 8 15.5 8 14 8.67 14 9.5s.67 1.5 1.5 1.5zm-7 0c.83 0 1.5-.67 1.5-1.5S9.33 8 8.5 8 7 8.67 7 9.5 7.67 11 8.5 11zm3.5 6.5c2.33 0 4.31-1.46 5.11-3.5H6.89c.8 2.04 2.78 3.5 5.11 3.5z"/>
-                </svg>
-                <h1 class="text-2xl font-bold" style="color: var(--purple);">Weather Dashboard</h1>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>Login | Weather Monitoring System</title>
+
+    <style>
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            margin: 0;
+            min-height: 100vh;
+
+            font-family:
+                Arial,
+                Helvetica,
+                sans-serif;
+
+            background:
+                linear-gradient(135deg,
+                    #eff6ff,
+                    #f8fafc);
+
+            display: flex;
+            align-items: center;
+            justify-content: center;
+
+            color: #172554;
+        }
+
+
+        /* =================================================
+           LOGIN CONTAINER
+           ================================================= */
+
+        .login-wrapper {
+            width: 100%;
+            max-width: 430px;
+            padding: 20px;
+        }
+
+
+        .login-card {
+            background: white;
+
+            border: 1px solid #e2e8f0;
+
+            border-radius: 18px;
+
+            padding: 38px;
+
+            box-shadow:
+                0 15px 40px rgba(15, 23, 42, 0.10);
+        }
+
+
+        /* =================================================
+           BRAND
+           ================================================= */
+
+        .brand {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+
+        .brand-icon {
+            width: 65px;
+            height: 65px;
+
+            margin: 0 auto 18px;
+
+            border-radius: 16px;
+
+            background: #2563eb;
+
+            display: flex;
+            align-items: center;
+            justify-content: center;
+
+            font-size: 30px;
+
+            box-shadow:
+                0 8px 20px rgba(37, 99, 235, 0.20);
+        }
+
+
+        .brand h1 {
+            margin: 0 0 8px;
+
+            font-size: 25px;
+
+            color: #172554;
+        }
+
+
+        .brand p {
+            margin: 0;
+
+            color: #64748b;
+
+            font-size: 13px;
+
+            line-height: 1.5;
+        }
+
+
+        /* =================================================
+           ERROR MESSAGE
+           ================================================= */
+
+        .error-message {
+            background: #fef2f2;
+
+            border: 1px solid #fecaca;
+
+            color: #b91c1c;
+
+            padding: 11px 13px;
+
+            border-radius: 8px;
+
+            margin-bottom: 20px;
+
+            font-size: 13px;
+        }
+
+
+        /* =================================================
+           FORM
+           ================================================= */
+
+        .form-group {
+            margin-bottom: 18px;
+        }
+
+
+        .form-group label {
+            display: block;
+
+            margin-bottom: 7px;
+
+            color: #334155;
+
+            font-size: 12px;
+
+            font-weight: 700;
+        }
+
+
+        .form-group input {
+            width: 100%;
+
+            padding: 12px 13px;
+
+            border: 1px solid #cbd5e1;
+
+            border-radius: 8px;
+
+            background: #f8fafc;
+
+            color: #334155;
+
+            font-family: inherit;
+
+            font-size: 14px;
+
+            outline: none;
+
+            transition:
+                border-color 0.2s ease,
+                box-shadow 0.2s ease,
+                background 0.2s ease;
+        }
+
+
+        .form-group input:focus {
+            border-color: #2563eb;
+
+            background: white;
+
+            box-shadow:
+                0 0 0 3px rgba(37, 99, 235, 0.10);
+        }
+
+
+        .form-group input::placeholder {
+            color: #94a3b8;
+        }
+
+
+        /* =================================================
+           LOGIN BUTTON
+           ================================================= */
+
+        .login-button {
+            width: 100%;
+
+            padding: 13px;
+
+            margin-top: 5px;
+
+            border: none;
+
+            border-radius: 8px;
+
+            background: #2563eb;
+
+            color: white;
+
+            font-family: inherit;
+
+            font-size: 14px;
+
+            font-weight: 700;
+
+            cursor: pointer;
+
+            transition:
+                background 0.2s ease,
+                transform 0.2s ease,
+                box-shadow 0.2s ease;
+        }
+
+
+        .login-button:hover {
+            background: #1d4ed8;
+
+            transform: translateY(-1px);
+
+            box-shadow:
+                0 5px 15px rgba(37, 99, 235, 0.20);
+        }
+
+
+        .login-button:active {
+            transform: translateY(0);
+        }
+
+
+        /* =================================================
+           FOOTER
+           ================================================= */
+
+        .login-footer {
+            text-align: center;
+
+            margin-top: 25px;
+
+            padding-top: 20px;
+
+            border-top: 1px solid #f1f5f9;
+
+            color: #94a3b8;
+
+            font-size: 11px;
+        }
+
+
+        /* =================================================
+           RESPONSIVE
+           ================================================= */
+
+        @media (max-width: 500px) {
+
+            .login-wrapper {
+                padding: 15px;
+            }
+
+            .login-card {
+                padding: 28px 22px;
+            }
+
+        }
+    </style>
+
+</head>
+
+
+<body>
+
+    <div class="login-wrapper">
+
+        <div class="login-card">
+
+            <!-- Brand -->
+            <div class="brand">
+
+                <div class="brand-icon">
+                    🌦️
+                </div>
+
+                <h1>Weather Monitoring</h1>
+
+                <p>
+                    Sign in to access the weather monitoring dashboard.
+                </p>
+
             </div>
 
-            <!-- Subtitle -->
-            <p class="text-center text-sm mb-8" style="color: var(--comment);">Sign in to continue</p>
 
-            <!-- Form -->
-            <form method="post" novalidate>
+            <!-- Error -->
+            {% if error %}
+
+            <div class="error-message">
+                {{ error }}
+            </div>
+
+            {% endif %}
+
+
+            <!-- Login form -->
+            <form method="post">
+
                 {% csrf_token %}
 
-                <!-- Non-field Errors -->
-                {% if form.non_field_errors %}
-                    <div class="error-box">
-                        {% for error in form.non_field_errors %}
-                            <p>{{ error }}</p>
-                        {% endfor %}
-                    </div>
-                {% endif %}
 
-                <!-- Username Field -->
                 <div class="form-group">
-                    <label for="{{ form.username.id_for_label }}" class="form-label">Username</label>
-                    {{ form.username }}
-                    {% if form.username.errors %}
-                        {% for error in form.username.errors %}
-                            <p class="error-message">{{ error }}</p>
-                        {% endfor %}
-                    {% endif %}
+
+                    <label for="username">
+                        Username
+                    </label>
+
+                    <input type="text" id="username" name="username" placeholder="Enter your username"
+                        autocomplete="username" required>
+
                 </div>
 
-                <!-- Password Field -->
+
                 <div class="form-group">
-                    <label for="{{ form.password.id_for_label }}" class="form-label">Password</label>
-                    {{ form.password }}
-                    {% if form.password.errors %}
-                        {% for error in form.password.errors %}
-                            <p class="error-message">{{ error }}</p>
-                        {% endfor %}
-                    {% endif %}
+
+                    <label for="password">
+                        Password
+                    </label>
+
+                    <input type="password" id="password" name="password" placeholder="Enter your password"
+                        autocomplete="current-password" required>
+
                 </div>
 
-                <!-- Submit Button -->
-                <button type="submit" class="btn-primary mt-6">Sign In</button>
+
+                <button type="submit" class="login-button">
+                    Sign In
+                </button>
+
             </form>
 
-            <!-- Sign Up Link -->
-            <p class="text-center text-xs mt-6" style="color: var(--comment);">
-                Don't have an account? <a href="{% url 'signup' %}" style="color: var(--purple);">Sign up here</a>
-            </p>
+
+            <div class="login-footer">
+                Weather Monitoring System
+            </div>
+
         </div>
+
     </div>
-</div>
-{% endblock %}
+
+</body>
+
+</html>

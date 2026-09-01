@@ -175,6 +175,12 @@ def _process_message(raw_payload: str, received_at: datetime):
     try:
         # Step 1: Parse raw TTN payload via ingestion contract
         cleaned_data = process_payload(raw_payload, received_at)
+
+        # GUARD CLAUSE: Ignore metadata / non-measurement packets if returned empty or None
+        if not cleaned_data or cleaned_data.get('is_metadata'):
+            logger.info("ℹ️ Received device status/metadata payload. Skipping weather DB insertion.")
+            return
+        
         device_id = cleaned_data.get('device_id', 'unknown')
         temperature = cleaned_data.get('temperature', 'N/A')
         
