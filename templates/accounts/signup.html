@@ -1,110 +1,520 @@
-<!-- templates/accounts/signup.html -->
-
-{% extends 'base.html' %}
-
-{% block title %}Sign Up - Weather Dashboard{% endblock %}
+{% extends "base.html" %}
 
 {% block content %}
-<div class="min-h-screen flex items-center justify-center p-4" style="background-color: var(--bg);">
-    <div class="w-full max-w-md">
-        <div class="form-card">
-            <!-- Logo -->
-            <div class="text-center mb-8">
-                <svg class="w-12 h-12 mx-auto mb-4" style="color: var(--purple);" fill="currentColor" viewBox="0 0 24 24">
-                    <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8zm3.5-9c.83 0 1.5-.67 1.5-1.5S16.33 8 15.5 8 14 8.67 14 9.5s.67 1.5 1.5 1.5zm-7 0c.83 0 1.5-.67 1.5-1.5S9.33 8 8.5 8 7 8.67 7 9.5 7.67 11 8.5 11zm3.5 6.5c2.33 0 4.31-1.46 5.11-3.5H6.89c.8 2.04 2.78 3.5 5.11 3.5z"/>
-                </svg>
-                <h1 class="text-2xl font-bold" style="color: var(--purple);">Weather Dashboard</h1>
-            </div>
-
-            <!-- Subtitle -->
-            <p class="text-center text-sm mb-8" style="color: var(--comment);">Create your account</p>
-
-            <!-- Success Messages -->
-            {% if messages %}
-                {% for message in messages %}
-                    <div class="success-message">
-                        {{ message }}
-                    </div>
-                {% endfor %}
-            {% endif %}
-
-            <!-- Form -->
-            <form method="post" novalidate>
-                {% csrf_token %}
-
-                <!-- Non-field Errors -->
-                {% if form.non_field_errors %}
-                    <div class="error-box">
-                        {% for error in form.non_field_errors %}
-                            <p>{{ error }}</p>
-                        {% endfor %}
-                    </div>
-                {% endif %}
-
-                <!-- Email Field -->
-                <div class="form-group">
-                    <label for="{{ form.email.id_for_label }}" class="form-label">Email</label>
-                    {{ form.email }}
-                    {% if form.email.errors %}
-                        {% for error in form.email.errors %}
-                            <p class="error-message">{{ error }}</p>
-                        {% endfor %}
-                    {% endif %}
-                </div>
-
-                <!-- Username Field -->
-                <div class="form-group">
-                    <label for="{{ form.username.id_for_label }}" class="form-label">Username</label>
-                    {{ form.username }}
-                    {% if form.username.errors %}
-                        {% for error in form.username.errors %}
-                            <p class="error-message">{{ error }}</p>
-                        {% endfor %}
-                    {% endif %}
-                </div>
-
-                <!-- Password Field -->
-                <div class="form-group">
-                    <label for="{{ form.password1.id_for_label }}" class="form-label">Password</label>
-                    {{ form.password1 }}
-                    {% if form.password1.errors %}
-                        {% for error in form.password1.errors %}
-                            <p class="error-message">{{ error }}</p>
-                        {% endfor %}
-                    {% endif %}
-                </div>
-
-                <!-- Confirm Password Field -->
-                <div class="form-group">
-                    <label for="{{ form.password2.id_for_label }}" class="form-label">Confirm Password</label>
-                    {{ form.password2 }}
-                    {% if form.password2.errors %}
-                        {% for error in form.password2.errors %}
-                            <p class="error-message">{{ error }}</p>
-                        {% endfor %}
-                    {% endif %}
-                </div>
-
-                <!-- Invite Key Field -->
-                <div class="form-group">
-                    <label for="{{ form.invite_key.id_for_label }}" class="form-label">Invite Key</label>
-                    {{ form.invite_key }}
-                    {% if form.invite_key.errors %}
-                        {% for error in form.invite_key.errors %}
-                            <p class="error-message">{{ error }}</p>
-                        {% endfor %}
-                    {% endif %}
-                </div>
-
-                <!-- Submit Button -->
-                <button type="submit" class="btn-primary mt-6">Sign Up</button>
-            </form>
-
-            <!-- Login Link -->
-            <p class="text-center text-xs mt-6" style="color: var(--comment);">
-                Already have an account? <a href="{% url 'login' %}" style="color: var(--purple);">Log in here</a>
-            </p>
-        </div>
+<div class="signup-container">
+  <div class="signup-card">
+    <!-- Logo/Brand Section -->
+    <div class="logo-section">
+      <div class="logo">
+        <svg width="48" height="48" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <rect width="48" height="48" rx="12" fill="#27AE60"/>
+          <text x="24" y="32" font-size="24" font-weight="bold" fill="white" text-anchor="middle">W</text>
+        </svg>
+      </div>
+      <h1 class="signup-heading">Sign up to Weather Dashboard</h1>
     </div>
+
+    <!-- Messages -->
+    {% if messages %}
+      {% for message in messages %}
+        <div class="alert alert-{{ message.tags|default:'info' }} alert-dismissible fade show" role="alert">
+          {{ message }}
+          <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+      {% endfor %}
+    {% endif %}
+
+    <!-- Form -->
+    <form method="post" novalidate class="signup-form">
+      {% csrf_token %}
+
+      <!-- Non-Field Errors -->
+      {% if form.non_field_errors %}
+        {% for error in form.non_field_errors %}
+          <div class="alert alert-danger" role="alert">{{ error }}</div>
+        {% endfor %}
+      {% endif %}
+
+      <!-- Email Field -->
+      <div class="form-group">
+        <label for="{{ form.email.id_for_label }}" class="form-label">Email address</label>
+        <div class="input-wrapper">
+          <svg class="input-icon" width="20" height="20" viewBox="0 0 20 20" fill="none">
+            <path d="M2 5L10 10L18 5M2 5H18C19.1 5 20 5.9 20 7V15C20 16.1 19.1 17 18 17H2C0.9 17 0 16.1 0 15V7C0 5.9 0.9 5 2 5Z" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+          {{ form.email }}
+        </div>
+        {% if form.email.errors %}
+          {% for error in form.email.errors %}
+            <div class="invalid-feedback">{{ error }}</div>
+          {% endfor %}
+        {% endif %}
+      </div>
+
+      <!-- Username Field -->
+      <div class="form-group">
+        <label for="{{ form.username.id_for_label }}" class="form-label">Username</label>
+        <div class="input-wrapper">
+          <svg class="input-icon" width="20" height="20" viewBox="0 0 20 20" fill="none">
+            <path d="M10 10C11.657 10 13 8.657 13 7C13 5.343 11.657 4 10 4C8.343 4 7 5.343 7 7C7 8.657 8.343 10 10 10Z" fill="currentColor"/>
+            <path d="M16 16C16 13.8 13.2 12 10 12C6.8 12 4 13.8 4 16" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+          </svg>
+          {{ form.username }}
+        </div>
+        {% if form.username.errors %}
+          {% for error in form.username.errors %}
+            <div class="invalid-feedback">{{ error }}</div>
+          {% endfor %}
+        {% endif %}
+      </div>
+
+      <!-- Password Field -->
+      <div class="form-group">
+        <label for="{{ form.password1.id_for_label }}" class="form-label">Password</label>
+        <div class="input-wrapper password-wrapper">
+          <svg class="input-icon" width="20" height="20" viewBox="0 0 20 20" fill="none">
+            <path d="M3 10C3 6.13 6.13 3 10 3C13.87 3 17 6.13 17 10" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+            <rect x="3" y="10" width="14" height="7" rx="1" stroke="currentColor" stroke-width="1.5"/>
+            <circle cx="10" cy="13.5" r="1.5" fill="currentColor"/>
+          </svg>
+          {{ form.password1 }}
+          <button type="button" class="toggle-password" onclick="togglePassword('id_password1')">
+            <svg class="eye-icon" width="20" height="20" viewBox="0 0 20 20" fill="none">
+              <path d="M10 4C5.58 4 1.95 6.92 1 11C1.95 15.08 5.58 18 10 18C14.42 18 18.05 15.08 19 11C18.05 6.92 14.42 4 10 4ZM10 16C7.79 16 6 14.21 6 12C6 9.79 7.79 8 10 8C12.21 8 14 9.79 14 12C14 14.21 12.21 16 10 16ZM10 9.5C8.62 9.5 7.5 10.62 7.5 12C7.5 13.38 8.62 14.5 10 14.5C11.38 14.5 12.5 13.38 12.5 12C12.5 10.62 11.38 9.5 10 9.5Z" fill="currentColor"/>
+            </svg>
+          </button>
+        </div>
+        <div class="password-strength">
+          <small id="password-strength-text" class="text-muted">Weak? Please add more strength!</small>
+        </div>
+        {% if form.password1.errors %}
+          {% for error in form.password1.errors %}
+            <div class="invalid-feedback">{{ error }}</div>
+          {% endfor %}
+        {% endif %}
+      </div>
+
+      <!-- Confirm Password Field -->
+      <div class="form-group">
+        <label for="{{ form.password2.id_for_label }}" class="form-label">Confirm password</label>
+        <div class="input-wrapper password-wrapper">
+          <svg class="input-icon" width="20" height="20" viewBox="0 0 20 20" fill="none">
+            <path d="M3 10C3 6.13 6.13 3 10 3C13.87 3 17 6.13 17 10" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+            <rect x="3" y="10" width="14" height="7" rx="1" stroke="currentColor" stroke-width="1.5"/>
+            <circle cx="10" cy="13.5" r="1.5" fill="currentColor"/>
+          </svg>
+          {{ form.password2 }}
+          <button type="button" class="toggle-password" onclick="togglePassword('id_password2')">
+            <svg class="eye-icon" width="20" height="20" viewBox="0 0 20 20" fill="none">
+              <path d="M10 4C5.58 4 1.95 6.92 1 11C1.95 15.08 5.58 18 10 18C14.42 18 18.05 15.08 19 11C18.05 6.92 14.42 4 10 4ZM10 16C7.79 16 6 14.21 6 12C6 9.79 7.79 8 10 8C12.21 8 14 9.79 14 12C14 14.21 12.21 16 10 16ZM10 9.5C8.62 9.5 7.5 10.62 7.5 12C7.5 13.38 8.62 14.5 10 14.5C11.38 14.5 12.5 13.38 12.5 12C12.5 10.62 11.38 9.5 10 9.5Z" fill="currentColor"/>
+            </svg>
+          </button>
+        </div>
+        {% if form.password2.errors %}
+          {% for error in form.password2.errors %}
+            <div class="invalid-feedback">{{ error }}</div>
+          {% endfor %}
+        {% endif %}
+      </div>
+
+      <!-- Invite Key Field (if needed) -->
+      {% if form.invite_key %}
+        <div class="form-group">
+          <label for="{{ form.invite_key.id_for_label }}" class="form-label">Invite Key</label>
+          <div class="input-wrapper">
+            {{ form.invite_key }}
+          </div>
+          {% if form.invite_key.errors %}
+            {% for error in form.invite_key.errors %}
+              <div class="invalid-feedback">{{ error }}</div>
+            {% endfor %}
+          {% endif %}
+        </div>
+      {% endif %}
+
+      <!-- Sign Up Button -->
+      <button type="submit" class="btn-signup">Sign Up</button>
+    </form>
+
+    <!-- Social Login Divider -->
+    <div class="divider">
+      <span>Or</span>
+    </div>
+
+    <!-- Social Login Options -->
+    <div class="social-login">
+      <a href="#" class="social-btn facebook" title="Sign up with Facebook">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor">
+          <path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/>
+        </svg>
+      </a>
+      <a href="#" class="social-btn google" title="Sign up with Google">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor">
+          <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/><path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/><path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/><path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/>
+        </svg>
+      </a>
+      <a href="#" class="social-btn apple" title="Sign up with Apple">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor">
+          <path d="M17.05 13.5c-.91 0-1.64.46-2.2 1.08.55.62 1.29 1.08 2.2 1.08 1.65 0 3-1.35 3-3s-1.35-3-3-3c-.91 0-1.65.46-2.2 1.08.56.62 1.29 1.08 2.2 1.08 1.1 0 2-1.34 2-3 0-1.66-1.35-3-3-3-1.1 0-2 .9-2 2v1c-.55-.62-1.29-1.08-2.2-1.08-1.65 0-3 1.35-3 3s1.35 3 3 3c.91 0 1.64-.46 2.2-1.08v1c0 1.1.9 2 2 2z"/>
+        </svg>
+      </a>
+    </div>
+
+    <!-- Sign In Link -->
+    <div class="signin-link">
+      Already have an account? <a href="{% url 'login' %}">Sign in</a>
+    </div>
+  </div>
 </div>
+
+<style>
+  :root {
+    --primary-color: #2563eb;
+    --primary-dark: #2563eb;
+    --primary-light: #2563eb;
+    --text-dark: #2C3E50;
+    --text-light: #7F8C8D;
+    --border-color: #ECF0F1;
+    --bg-light: #F8F9FA;
+    --danger: #E74C3C;
+  }
+
+  .signup-container {
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+    padding: 20px;
+  }
+
+  .signup-card {
+    background: white;
+    border-radius: 16px;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.1);
+    padding: 48px 40px;
+    width: 100%;
+    max-width: 420px;
+  }
+
+  /* Logo Section */
+  .logo-section {
+    text-align: center;
+    margin-bottom: 32px;
+  }
+
+  .logo {
+    margin-bottom: 20px;
+  }
+
+  .logo svg {
+    animation: fadeIn 0.6s ease-in;
+  }
+
+  .signup-heading {
+    font-size: 24px;
+    font-weight: 600;
+    color: var(--text-dark);
+    margin: 0;
+    letter-spacing: -0.5px;
+  }
+
+  /* Form Styling */
+  .signup-form {
+    margin-top: 28px;
+  }
+
+  .form-group {
+    margin-bottom: 20px;
+  }
+
+  .form-label {
+    display: block;
+    font-size: 14px;
+    font-weight: 500;
+    color: var(--text-dark);
+    margin-bottom: 8px;
+  }
+
+  /* Input Wrapper */
+  .input-wrapper {
+    position: relative;
+    display: flex;
+    align-items: center;
+  }
+
+  .input-icon {
+    position: absolute;
+    left: 12px;
+    color: var(--text-light);
+    pointer-events: none;
+    flex-shrink: 0;
+  }
+
+  input[type="email"],
+  input[type="password"],
+  input[type="text"] {
+    width: 100%;
+    padding: 12px 12px 12px 40px;
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    font-size: 14px;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    transition: all 0.3s ease;
+    background-color: var(--bg-light);
+  }
+
+  input[type="email"]:focus,
+  input[type="password"]:focus,
+  input[type="text"]:focus {
+    outline: none;
+    border-color: var(--primary-color);
+    background-color: white;
+    box-shadow: 0 0 0 3px rgba(39, 174, 96, 0.1);
+  }
+
+  input::placeholder {
+    color: var(--text-light);
+  }
+
+  /* Password Field */
+  .password-wrapper {
+    position: relative;
+  }
+
+  .toggle-password {
+    position: absolute;
+    right: 12px;
+    background: none;
+    border: none;
+    cursor: pointer;
+    color: var(--text-light);
+    padding: 6px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: color 0.3s ease;
+  }
+
+  .toggle-password:hover {
+    color: var(--primary-color);
+  }
+
+  .password-strength {
+    margin-top: 6px;
+    font-size: 12px;
+    color: var(--text-light);
+  }
+
+  /* Error Feedback */
+  .invalid-feedback {
+    display: block;
+    color: var(--danger);
+    font-size: 12px;
+    margin-top: 6px;
+  }
+
+  /* Sign Up Button */
+  .btn-signup {
+    width: 100%;
+    padding: 13px;
+    background-color: var(--primary-color);
+    color: white;
+    border: none;
+    border-radius: 8px;
+    font-size: 15px;
+    font-weight: 600;
+    cursor: pointer;
+    margin-top: 8px;
+    transition: all 0.3s ease;
+    letter-spacing: 0.5px;
+  }
+
+  .btn-signup:hover {
+    background-color: var(--primary-dark);
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(39, 174, 96, 0.3);
+  }
+
+  .btn-signup:active {
+    transform: translateY(0);
+  }
+
+  /* Divider */
+  .divider {
+    position: relative;
+    margin: 28px 0;
+    text-align: center;
+  }
+
+  .divider span {
+    background-color: white;
+    padding: 0 12px;
+    color: var(--text-light);
+    font-size: 13px;
+    font-weight: 500;
+  }
+
+  .divider::before {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 0;
+    right: 0;
+    height: 1px;
+    background-color: var(--border-color);
+  }
+
+  /* Social Login */
+  .social-login {
+    display: flex;
+    gap: 12px;
+    justify-content: center;
+    margin-bottom: 28px;
+  }
+
+  .social-btn {
+    width: 48px;
+    height: 48px;
+    border-radius: 8px;
+    border: 1px solid var(--border-color);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.3s ease;
+    color: var(--text-dark);
+  }
+
+  .social-btn:hover {
+    border-color: var(--primary-color);
+    background-color: var(--bg-light);
+  }
+
+  .social-btn.facebook:hover {
+    color: #1877F2;
+  }
+
+  .social-btn.google:hover {
+    color: #4285F4;
+  }
+
+  .social-btn.apple:hover {
+    color: #000000;
+  }
+
+  /* Sign In Link */
+  .signin-link {
+    text-align: center;
+    font-size: 13px;
+    color: var(--text-light);
+  }
+
+  .signin-link a {
+    color: var(--primary-color);
+    text-decoration: none;
+    font-weight: 600;
+    transition: color 0.3s ease;
+  }
+
+  .signin-link a:hover {
+    color: var(--primary-dark);
+    text-decoration: underline;
+  }
+
+  /* Alerts */
+  .alert {
+    border-radius: 8px;
+    margin-bottom: 20px;
+    border: none;
+    font-size: 13px;
+  }
+
+  .alert-info {
+    background-color: #D6EAF8;
+    color: #1A5E7A;
+  }
+
+  .alert-danger {
+    background-color: #FADBD8;
+    color: #78281F;
+  }
+
+  .alert-success {
+    background-color: #D5F4E6;
+    color: #0B5345;
+  }
+
+  /* Animations */
+  @keyframes fadeIn {
+    from {
+      opacity: 0;
+      transform: translateY(-10px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  /* Responsive */
+  @media (max-width: 480px) {
+    .signup-card {
+      padding: 32px 24px;
+    }
+
+    .signup-heading {
+      font-size: 20px;
+    }
+
+    .form-group {
+      margin-bottom: 16px;
+    }
+
+    input[type="email"],
+    input[type="password"],
+    input[type="text"] {
+      padding: 11px 11px 11px 36px;
+      font-size: 16px;
+    }
+  }
+</style>
+
+<script>
+  function togglePassword(inputId) {
+    const input = document.getElementById(inputId);
+    const type = input.type === 'password' ? 'text' : 'password';
+    input.type = type;
+  }
+
+  // Password strength indicator
+  const passwordInput = document.getElementById('id_password1');
+  if (passwordInput) {
+    passwordInput.addEventListener('input', function() {
+      const strength = calculatePasswordStrength(this.value);
+      const strengthText = document.getElementById('password-strength-text');
+      
+      if (strength < 40) {
+        strengthText.textContent = 'Weak? Please add more strength!';
+        strengthText.style.color = '#E74C3C';
+      } else if (strength < 70) {
+        strengthText.textContent = 'Good password';
+        strengthText.style.color = '#F39C12';
+      } else {
+        strengthText.textContent = 'Strong password';
+        strengthText.style.color = '#27AE60';
+      }
+    });
+  }
+
+  function calculatePasswordStrength(password) {
+    let strength = 0;
+    if (password.length >= 8) strength += 20;
+    if (password.length >= 12) strength += 10;
+    if (/[a-z]/.test(password)) strength += 15;
+    if (/[A-Z]/.test(password)) strength += 15;
+    if (/[0-9]/.test(password)) strength += 20;
+    if (/[^a-zA-Z0-9]/.test(password)) strength += 20;
+    return Math.min(strength, 100);
+  }
+</script>
 {% endblock %}
