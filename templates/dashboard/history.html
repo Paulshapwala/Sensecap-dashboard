@@ -64,6 +64,10 @@
             Ready
         </div>
 
+        <button id="download-csv-btn" style="background-color: grey; color: white; padding: 10px 16px; border: none; border-radius: 4px; cursor: not-allowed; opacity: 0.6;">
+            Download CSV
+        </button>
+
     </div>
 
 
@@ -499,67 +503,71 @@
     }
 </style>
 <script>
-    const DATA_HISTORY_URL = "{% url 'dashboard:data_history' %}";
+const DATA_HISTORY_URL = "{% url 'dashboard:data_history' %}";
+let fullReadingsData = []; // Store the full response data
 
-    async function loadHistory() {
-        const startDate = document.getElementById('start-date').value;
-        const endDate = document.getElementById('end-date').value;
-        const statusEl = document.querySelector('.chart-status');
+async function loadHistory() {
+    const startDate = document.getElementById('start-date').value;
+    const endDate = document.getElementById('end-date').value;
+    const statusEl = document.querySelector('.chart-status');
 
-        if (!startDate || !endDate) {
-            alert('Please select both a start and end date.');
-            return;
-        }
+    if (!startDate || !endDate) {
+        alert('Please select both a start and end date.');
+        return;
+    }
 
-        if (statusEl) {
-            statusEl.textContent = 'Loading...';
-            statusEl.style.background = '#e0f2fe';
-            statusEl.style.color = '#0369a1';
-        }
+    if (statusEl) {
+        statusEl.textContent = 'Loading...';
+        statusEl.style.background = '#e0f2fe';
+        statusEl.style.color = '#0369a1';
+    }
 
-        const start = `${startDate}T00:00:00`;
-        const end = `${endDate}T23:59:59`;
-        const url = `${DATA_HISTORY_URL}?start=${encodeURIComponent(start)}&end=${encodeURIComponent(end)}`;
+    const start = `${startDate}T00:00:00`;
+    const end = `${endDate}T23:59:59`;
+    const url = `${DATA_HISTORY_URL}?start=${encodeURIComponent(start)}&end=${encodeURIComponent(end)}`;
 
-        try {
-            const response = await fetch(url, {
-                method: 'GET',
-                credentials: 'same-origin',
-                headers: {
-                    'X-Requested-With': 'XMLHttpRequest',
-                },
-            });
+    try {
+        const response = await fetch(url, {
+            method: 'GET',
+            credentials: 'same-origin',
+            headers: {
+                'X-Requested-With': 'XMLHttpRequest',
+            },
+        });
 
-            if (!response.ok) {
-                const err = await response.json().catch(() => ({}));
-                console.error('Error loading history:', response.status, err);
-                alert(err.error || `Request failed with status ${response.status}`);
-                if (statusEl) {
-                    statusEl.textContent = 'Error';
-                    statusEl.style.background = '#fef2f2';
-                    statusEl.style.color = '#b91c1c';
-                }
-                return;
-            }
-
-            const data = await response.json();
-            renderHistory(data.readings);
-
-            if (statusEl) {
-                statusEl.textContent = 'Updated';
-                statusEl.style.background = '#f0fdf4';
-                statusEl.style.color = '#15803d';
-            }
-        } catch (e) {
-            console.error('Network or parsing error:', e);
-            alert('Something went wrong loading the history.');
+        if (!response.ok) {
+            const err = await response.json().catch(() => ({}));
+            console.error('Error loading history:', response.status, err);
+            alert(err.error || `Request failed with status ${response.status}`);
             if (statusEl) {
                 statusEl.textContent = 'Error';
                 statusEl.style.background = '#fef2f2';
                 statusEl.style.color = '#b91c1c';
             }
+            return;
+        }
+
+        const data = await response.json();
+        fullReadingsData = data.readings; // Store the full data
+        
+        renderHistory(data.readings);
+        downloadCSV(fullReadingsData); // Pass full data here
+
+        if (statusEl) {
+            statusEl.textContent = 'Updated';
+            statusEl.style.background = '#f0fdf4';
+            statusEl.style.color = '#15803d';
+        }
+    } catch (e) {
+        console.error('Network or parsing error:', e);
+        alert('Something went wrong loading the history.');
+        if (statusEl) {
+            statusEl.textContent = 'Error';
+            statusEl.style.background = '#fef2f2';
+            statusEl.style.color = '#b91c1c';
         }
     }
+}
 
     function renderHistory(readings) {
         const container = document.getElementById('chart-container');
@@ -625,7 +633,72 @@
             summaryCards[2].textContent = countPressure ? `${(totalPressure / countPressure).toFixed(1)} hPa` : '--';
             summaryCards[3].textContent = readings.length; // Total count display
         }
+
+        // Call downloadCSV to enable the button
+    downloadCSV(readings);
     }
+    
+ function downloadCSV(readings) {
+    const btn = document.getElementById('download-csv-btn');
+    
+    // Enable the button and change color to blue
+    btn.style.background = '#3b82f6';
+    btn.style.cursor = 'pointer';
+    btn.style.opacity = '1';
+    
+    // Remove any existing click listeners
+    btn.onclick = null;
+    
+    // Add the click event listener
+    btn.addEventListener('click', function() {
+        if (!readings || readings.length === 0) {
+            alert('No data to download');
+            return;
+        }
+        
+        // Get the date range from input fields
+        const startDate = document.getElementById('start-date').value;
+        const endDate = document.getElementById('end-date').value;
+        const dateRange = `${startDate}_to_${endDate}`;
+        
+        // Fields to exclude from CSV
+        const excludeFields = ['rssi', 'snr'];
+        
+        // Get all unique keys from the readings objects, excluding specified fields
+        const allKeys = [...new Set(readings.flatMap(r => Object.keys(r)))].filter(
+            key => !excludeFields.includes(key.toLowerCase())
+        );
+        
+        const headers = allKeys;
+        const csvContent = [headers.join(',')];
+        
+        readings.forEach(r => {
+            const row = allKeys.map(key => {
+                const value = r[key];
+                // Wrap in quotes if it contains commas or quotes
+                if (value === null || value === undefined) return '--';
+                if (typeof value === 'string' && (value.includes(',') || value.includes('"'))) {
+                    return `"${value.replace(/"/g, '""')}"`;
+                }
+                return value;
+            });
+            csvContent.push(row.join(','));
+        });
+        
+        // Create blob and download
+        const csvString = csvContent.join('\n');
+        const blob = new Blob([csvString], { type: 'text/csv;charset=utf-8;' });
+        const link = document.createElement('a');
+        const url = URL.createObjectURL(blob);
+        
+        link.setAttribute('href', url);
+        link.setAttribute('download', `readings_${dateRange}.csv`);
+        link.style.visibility = 'hidden';
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+    });
+}
 </script>
 
 {% endblock %}
