@@ -19,8 +19,9 @@ Private helpers (internal only, not part of the contract):
 from datetime import datetime
 
 from django.core.exceptions import ValidationError
-from django.db.models import Avg, Sum
-from django.db.models.functions import TruncHour, TruncDay
+from django.db.models import Avg, Sum, Max, Min
+from django.db.models.functions import TruncHour, TruncDay, TruncWeek, TruncMonth
+
 from django.utils import timezone
 
 from .models import WeatherReading
@@ -45,6 +46,12 @@ FIELD_RANGES = {
     "snr": (-80.0, 80.0),
 }
 
+PERIOD_TRUNC = {
+    "hourly": TruncHour,
+    "daily": TruncDay,
+    "weekly": TruncWeek,
+    "monthly": TruncMonth,
+}
 
 # ── Private helpers ──────────────────────────────────────────────────
 # Not part of the exposed contract. Other apps must never import these
@@ -100,16 +107,16 @@ def get_readings(start: datetime, end: datetime):
         received_at__gte=start, received_at__lte=end
     ).order_by("received_at")
 
-
 def get_aggregates(start: datetime, end: datetime, period: str):
     """
-    period: "hourly" or "daily".
+    period: "hourly", "daily", "weekly", or "monthly".
     Returns a list of dicts using database-level aggregation only.
     """
-    if period not in ("hourly", "daily"):
-        raise ValidationError('period must be "hourly" or "daily"')
-
-    trunc = TruncHour if period == "hourly" else TruncDay
+    trunc = PERIOD_TRUNC.get(period)
+    if trunc is None:
+        raise ValidationError(
+            f'period must be one of {", ".join(PERIOD_TRUNC)}'
+        )
 
     queryset = (
         WeatherReading.objects.filter(received_at__gte=start, received_at__lte=end)
@@ -117,6 +124,8 @@ def get_aggregates(start: datetime, end: datetime, period: str):
         .values("period_start")
         .annotate(
             avg_temperature=Avg("temperature"),
+            max_temperature=Max("temperature"),
+            min_temperature=Min("temperature"),
             avg_humidity=Avg("humidity"),
             avg_pressure=Avg("pressure"),
             avg_wind_speed=Avg("wind_speed"),
