@@ -5,6 +5,7 @@ from django.http import JsonResponse
 from django.views.decorators.http import require_http_methods
 from django.utils import timezone
 from datetime import datetime, timezone as dt_timezone 
+from django.core.exceptions import ValidationError
 from apps.weather.services import (
     get_latest_reading,
     get_readings,
@@ -84,47 +85,93 @@ def data_history(request):
     
     return JsonResponse({'readings': data})
 
+
 @login_required
 @require_http_methods(["GET"])
 def data_aggregates(request):
     """
-    GET /data/aggregates/?start=2026-07-22&end=2026-07-23&period=hourly|daily
-    Accepts times in user's local timezone, converts to UTC for query,
-    returns times in user's local timezone for display.
+    GET /data/aggregates/?start=&end=&period=hourly|daily|weekly|monthly
+
+    Accepts times in user's local timezone, converts to UTC for query.
+    Returns aggregates (times converted back to local timezone) plus a
+    `stats` block: peak temperature, average temperature, total rainfall,
+    and rainy-day count over the range.
     """
     start_str = request.GET.get('start')
     end_str = request.GET.get('end')
     period = request.GET.get('period', 'hourly')
-    
+
     if not start_str or not end_str:
         return JsonResponse({'error': 'start and end required'}, status=400)
-    
+
     try:
         start_naive = datetime.fromisoformat(start_str)
         end_naive = datetime.fromisoformat(end_str)
-        
+
         tz = timezone.get_current_timezone()
         start_tz = timezone.make_aware(start_naive, tz)
         end_tz = timezone.make_aware(end_naive, tz)
-        
+
         start_utc = start_tz.astimezone(dt_timezone.utc)
         end_utc = end_tz.astimezone(dt_timezone.utc)
-    except ValueError:
-        return JsonResponse({'error': 'Invalid date format'}, status=400)
-    
-    # Get aggregates from weather app
-    aggregates = get_aggregates(start_utc, end_utc, period)
-    
-    # Convert period_start times back to user's timezone
-    tz = timezone.get_current_timezone()
-    for agg in aggregates:
-        if 'period_start' in agg:
-            period_dt = datetime.fromisoformat(agg['period_start'])
-            period_aware = timezone.make_aware(period_dt, dt_timezone.utc)
-            agg['period_start'] = period_aware.astimezone(tz).isoformat()
-    
-    return JsonResponse({'aggregates': aggregates})
+    except (ValueError, TypeError) as e:
+        return JsonResponse({'error': f'Invalid date format: {str(e)}'}, status=400)
 
+    try:
+        aggregates = get_aggregates(start_utc, end_utc, period)
+    except ValidationError as e:
+        return JsonResponse({'error': str(e)}, status=400)
+
+    def _localize(dt):
+        """period_start comes back as an aware UTC datetime from the ORM."""
+        if dt is None:
+            return None
+        if timezone.is_naive(dt):
+            dt = timezone.make_aware(dt, dt_timezone.utc)
+        return dt.astimezone(tz).isoformat()
+
+    for agg in aggregates:
+        agg['period_start'] = _localize(agg.get('period_start'))
+
+    # Rainy days: always computed at daily granularity, regardless of the
+    # chart's requested period, since "days it rained" isn't meaningful
+    # bucketed hourly/weekly/monthly.
+    if period == 'daily':
+        daily_aggs = aggregates
+    else:
+        daily_aggs = get_aggregates(start_utc, end_utc, 'daily')
+
+    rainy_days = sum(1 for a in daily_aggs if (a.get('total_rainfall') or 0) > 0)
+
+    stats = {
+        'rainy_days': rainy_days,
+        'days_counted': len(daily_aggs),
+    }
+
+    if aggregates:
+        temps = [a['max_temperature'] for a in aggregates if a['max_temperature'] is not None]
+        avg_temps = [a['avg_temperature'] for a in aggregates if a['avg_temperature'] is not None]
+        rainfall_total = sum(a.get('total_rainfall') or 0 for a in aggregates)
+
+        if temps:
+            peak_agg = max(aggregates, key=lambda a: a['max_temperature'] if a['max_temperature'] is not None else float('-inf'))
+            stats['peak_temperature'] = peak_agg['max_temperature']
+            stats['peak_temperature_at'] = peak_agg['period_start']
+        else:
+            stats['peak_temperature'] = None
+            stats['peak_temperature_at'] = None
+
+        stats['average_temperature'] = round(sum(avg_temps) / len(avg_temps), 1) if avg_temps else None
+        stats['total_rainfall'] = round(rainfall_total, 1)
+    else:
+        stats.update({
+            'peak_temperature': None,
+            'peak_temperature_at': None,
+            'average_temperature': None,
+            'total_rainfall': None,
+        })
+
+    return JsonResponse({'period': period, 'aggregates': aggregates, 'stats': stats})
 
 @login_required
 @require_http_methods(["GET"])
